@@ -82,10 +82,13 @@ public class GifWriter implements PlugIn {
 			ge.transIndex = transparentIndex;
 		}
 	       ge.start(path);
-		
+		int origSlice = imp.getSlice();
  		for (int i=1; i<=nSlices; i++) {
 			IJ.showStatus("writing: "+i+"/"+nSlices);
 			IJ.showProgress((double)i/nSlices);
+            imp.setSlice(i);
+            imp.updateAndDraw();
+            //IJ.wait(1000);
 			tmp.setProcessor(null, stack.getProcessor(i));
 			
 			try {
@@ -94,7 +97,7 @@ public class GifWriter implements PlugIn {
 				IJ.showMessage("Save as Gif", ""+e);
 				return;
 			}
-
+        imp.setSlice(origSlice);
 		}
 		ge.finish();
 		IJ.showStatus("");

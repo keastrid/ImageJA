@@ -61,6 +61,17 @@ public class PolygonRoi extends Roi {
 		yp2 = new int[nPoints];
 		init2(type);
 	}
+    
+    /** Creates a new polygon or polyline ROI from float x and y arrays.
+		Type must be Roi.POLYGON, Roi.FREEROI, Roi.POLYLINE, Roi.FREELINE or Roi.ANGLE.*/
+	public PolygonRoi(float[] xPoints, float[] yPoints, int type) {
+		this(xPoints, yPoints, xPoints.length, type);
+	}
+    
+    /** Returns the number of points in this selection; equivalent to getPolygon().npoints. */
+	public int size() {
+		return xSpline!=null?splinePoints:nPoints;
+	}
 
 	private void init1(int nPoints, int type) throws IllegalArgumentException{
 		maxPoints = nPoints;

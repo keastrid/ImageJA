@@ -160,7 +160,7 @@ public class Menus {
 		addPlugInItem(image, "Rename...", "ij.plugin.SimpleCommands(\"rename\")", 0, false);
 		addPlugInItem(image, "Scale...", "ij.plugin.Scaler", KeyEvent.VK_E, false);
 		getMenu("Image>Transform", true);
-		getMenu("Image>Zoom", true);
+		// getMenu("Image>Zoom", true);
 		getMenu("Image>Overlay", true);
 		image.addSeparator();
 		getMenu("Image>Lookup Tables", true);
@@ -222,11 +222,12 @@ public class Menus {
 		addPlugInItem(help, "Macros...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/macros/\")", 0, false);
 		addPlugInItem(help, "Macro Functions...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/developer/macro/functions.html\")", 0, false);
 		help.addSeparator();
-		addPlugInItem(help, "Update ImageJ...", "ij.plugin.ImageJ_Updater", 0, false);
+		addPlugInItem(help, "Update AstroImageJ...", "AstroImageJ_Updater", 0, false);
 		addPlugInItem(help, "Refresh Menus", "ij.plugin.ImageJ_Updater(\"menus\")", 0, false);
 		help.addSeparator();
 		Menu aboutMenu = getMenu("Help>About Plugins", true);
 		addPlugInItem(help, "About ImageJ...", "ij.plugin.AboutBox", 0, false);
+        addPlugInItem(help, "About AstroImageJ...", "ij.plugin.AboutBox", 0, false);
 				
 		if (applet==null) {
 			menuSeparators = new Properties();
@@ -724,6 +725,17 @@ public class Menus {
 		if (name.equals("plugins")) return null;
 		return name;
     }
+    
+    /** Returns the specified ImageJ menu (e.g., "File>New") or null if it is not found. */
+	public static Menu getImageJMenu(String menuPath) {
+		if (menus==null)
+			return null;
+		if (menus.get(menuPath)!=null)
+			return getMenu(menuPath, false);
+		else
+			return null;
+	}
+    
 
 	static void addItemSorted(Menu menu, MenuItem item, int startingIndex) {
 		String itemLabel = item.getLabel();

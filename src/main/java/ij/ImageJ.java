@@ -18,6 +18,7 @@ import ij.io.Opener;
 import ij.util.*;
 import javax.swing.ImageIcon;
 
+
 /**
 This frame is the main ImageJ class.
 <p>
@@ -80,6 +81,7 @@ public class ImageJ extends Frame implements ActionListener,
 	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
 	/** Address of socket where Image accepts commands */
 	public static final int DEFAULT_PORT = 57294;
+    public static final String ASTROVERSION = "3.4.0.21";  //4.0.0.1
 	
 	/** Run as normal application. */
 	public static final int STANDALONE=0;
@@ -130,7 +132,7 @@ public class ImageJ extends Frame implements ActionListener,
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
 	public ImageJ(java.applet.Applet applet, int mode) {
-		super("ImageJ");
+		super("AstroImageJ");
 		embedded = applet==null && (mode==EMBEDDED||mode==NO_SHOW);
 		this.applet = applet;
 		String err1 = Prefs.load(this, applet);
@@ -174,7 +176,7 @@ public class ImageJ extends Frame implements ActionListener,
 		Dimension tbSize = toolbar.getPreferredSize();
 		int ijWidth = tbSize.width+10;
 		int ijHeight = 100;
-		setCursor(Cursor.getDefaultCursor()); // work-around for JDK 1.1.8 bug
+		setCursor(java.awt.Cursor.getDefaultCursor()); // work-around for JDK 1.1.8 bug
 		if (mode!=NO_SHOW) {
 			if (IJ.isWindows()) try {setIcon();} catch(Exception e) {}
 			setBounds(loc.x, loc.y, ijWidth, ijHeight); // needed for pack to work
@@ -221,7 +223,7 @@ public class ImageJ extends Frame implements ActionListener,
 		int width = icon.getIconWidth();
 		int height = icon.getIconHeight();
 		Point hotSpot = new Point(width/2, height/2);
-		Cursor crosshairCursor = toolkit.createCustomCursor(image, hotSpot, "crosshair-cursor.gif");
+		java.awt.Cursor crosshairCursor = toolkit.createCustomCursor(image, hotSpot, "crosshair-cursor.gif");
 		ImageCanvas.setCursor(crosshairCursor, 0);
 		//IJ.log(width+" "+height+" "+toolkit.getBestCursorSize(width,height));
 	}
@@ -246,7 +248,7 @@ public class ImageJ extends Frame implements ActionListener,
 	}
 	
     void setIcon() throws Exception {
-		URL url = this.getClass().getResource("/microscope.gif");
+		URL url = this.getClass().getResource("/astronomy_icon.png");
 		if (url==null) return;
 		Image img = createImage((ImageProducer)url.getContent());
 		if (img!=null) setIconImage(img);
@@ -256,9 +258,9 @@ public class ImageJ extends Frame implements ActionListener,
 		if (!IJ.isJava14()) return new Point(0, 0);
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		Rectangle maxBounds = ge.getMaximumWindowBounds();
-		int ijX = Prefs.getInt(IJ_X,-99);
-		int ijY = Prefs.getInt(IJ_Y,-99);
-		if (ijX>=0 && ijY>0 && ijX<(maxBounds.x+maxBounds.width-75))
+		int ijX = Prefs.getInt(IJ_X, 10);
+		int ijY = Prefs.getInt(IJ_Y, 10);
+		if (Prefs.isLocationOnScreen(new Point(ijX, ijY)))
 			return new Point(ijX, ijY);
 		Dimension tbsize = toolbar.getPreferredSize();
 		int ijWidth = tbsize.width+10;
@@ -431,8 +433,8 @@ public class ImageJ extends Frame implements ActionListener,
 			switch (keyChar) {
 				case '<': case ',': cmd="Previous Slice [<]"; break;
 				case '>': case '.': case ';': cmd="Next Slice [>]"; break;
-				case '+': case '=': cmd="In [+]"; break;
-				case '-': cmd="Out [-]"; break;
+				case '+': case '=': cmd=""; break;
+				case '-': cmd=""; break;
 				case '/': cmd="Reslice [/]..."; break;
 				default:
 			}
@@ -440,7 +442,7 @@ public class ImageJ extends Frame implements ActionListener,
 
 		if (cmd==null) {
 			switch(keyCode) {
-				case KeyEvent.VK_TAB: WindowManager.putBehind(); return;
+				//case KeyEvent.VK_TAB: WindowManager.putBehind(); return;
 				case KeyEvent.VK_BACK_SPACE: // delete
 					if (deleteOverlayRoi(imp))
 						return;
@@ -448,8 +450,8 @@ public class ImageJ extends Frame implements ActionListener,
 					hotkey=true;
 					break; 
 				//case KeyEvent.VK_BACK_SLASH: cmd=IJ.altKeyDown()?"Animation Options...":"Start Animation"; break;
-				case KeyEvent.VK_EQUALS: cmd="In [+]"; break;
-				case KeyEvent.VK_MINUS: cmd="Out [-]"; break;
+				case KeyEvent.VK_EQUALS: cmd=""; break;
+				case KeyEvent.VK_MINUS: cmd=""; break;
 				case KeyEvent.VK_SLASH: case 0xbf: cmd="Reslice [/]..."; break;
 				case KeyEvent.VK_COMMA: case 0xbc: cmd="Previous Slice [<]"; break;
 				case KeyEvent.VK_PERIOD: case 0xbe: cmd="Next Slice [>]"; break;
@@ -465,9 +467,9 @@ public class ImageJ extends Frame implements ActionListener,
 					else if (stackKey && keyCode==KeyEvent.VK_LEFT)
 							cmd="Previous Slice [<]";
 					else if (zoomKey && keyCode==KeyEvent.VK_DOWN && !ignoreArrowKeys(imp) && Toolbar.getToolId()<Toolbar.SPARE6)
-							cmd="Out [-]";
+							cmd="";
 					else if (zoomKey && keyCode==KeyEvent.VK_UP && !ignoreArrowKeys(imp) && Toolbar.getToolId()<Toolbar.SPARE6)
-							cmd="In [+]";
+							cmd="";
 					else if (roi!=null) {
 						if ((flags & KeyEvent.ALT_MASK) != 0)
 							roi.nudgeCorner(keyCode);
@@ -759,6 +761,19 @@ public class ImageJ extends Frame implements ActionListener,
 		//IJ.log("savePreferences");
 		if (applet==null) {
 			saveWindowLocations();
+            Frame[] dp = Frame.getFrames();
+            for (int i=0; i<dp.length;i++)
+                {
+                if (dp[i].getTitle().equals("CCD Data Processor") ||
+                    dp[i].getTitle().equals("Multi-plot Main") ||
+                    dp[i].getTitle().equals("Coordinate Converter") ||
+                    dp[i].getClass().getName().contains("AstroStackWindow"))
+                    {
+                    WindowEvent wev = new WindowEvent(dp[i], WindowEvent.WINDOW_CLOSING);
+                    Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+                    IJ.wait(100);
+                    }
+                }
 			Prefs.savePreferences();
 		}
 		IJ.cleanup();

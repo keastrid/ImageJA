@@ -27,7 +27,7 @@ import javax.imageio.ImageIO;
 /** Opens tiff (and tiff stacks), dicom, fits, pgm, jpeg, bmp or
 	gif images, and look-up tables, using a file open dialog or a path.
 	Calls HandleExtraFileTypes plugin if the file type is unrecognised. */
-public class Opener {
+public class Opener_fits {
 
 	public static final int UNKNOWN=0,TIFF=1,DICOM=2,FITS=3,PGM=4,JPEG=5,
 		GIF=6,LUT=7,BMP=8,ZIP=9,JAVA_OR_TEXT=10,ROI=11,TEXT=12,PNG=13,
@@ -50,7 +50,7 @@ public class Opener {
 		bioformats = commands!=null && commands.get("Bio-Formats Importer")!=null;
 	}
 
-	public Opener() {
+	public Opener_fits() {
 	}
 
 	/** Displays a file open dialog box and then opens the tiff, dicom, 
@@ -839,12 +839,9 @@ public class Opener {
 				DICOM dcm = new DICOM(zis);
 				dcm.run(name);
 				imp = dcm;
-			} else if (name.endsWith(".fts") || name.endsWith(".fits") || name.endsWith(".fit") || name.endsWith("fts.fz") || name.endsWith(".fits.fz") || name.endsWith(".fit.fz")) {
-                imp = (ImagePlus)IJ.runPlugIn("ij.plugin.FITS_Reader", path+'\\'+name.replace('/', '\\'));
-				if (imp.getWidth()!=0) return imp; else return null;                
 			} else {
 				zis.close();
-				IJ.error("This ZIP archive does not appear to contain a \nTIFF (\".tif\") or DICOM (\".dcm\") or FITS file, or ROIs (\".roi\").");
+				IJ.error("This ZIP archive does not appear to contain a \nTIFF (\".tif\") or DICOM (\".dcm\") file, or ROIs (\".roi\").");
 				return null;
 			}
 		} catch (Exception e) {
@@ -964,7 +961,7 @@ public class Opener {
 		if (!((new File(path)).exists()))
 			return("not found");
 		else
-			return Opener.types[(new Opener()).getFileType(path)];
+			return Opener_fits.types[(new Opener_fits()).getFileType(path)];
 	}
 	
 	/**

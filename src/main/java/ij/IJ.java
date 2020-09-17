@@ -39,7 +39,7 @@ public class IJ {
 	private static ProgressBar progressBar;
 	private static TextPanel textPanel;
 	private static String osname, osarch;
-	private static boolean isMac, isWin, isJava2, isJava14, isJava15, isJava16, isJava17, isLinux, is64Bit;
+	private static boolean isMac, isWin, isJava2, isJava14, isJava15, isJava16, isJava17, isJava18, isLinux, is64Bit;
 	private static boolean controlDown, altDown, spaceDown, shiftDown;
 	private static boolean macroRunning;
 	private static Thread previousThread;
@@ -67,6 +67,7 @@ public class IJ {
 			isJava15 = version.compareTo("1.4")>0;
 			isJava16 = version.compareTo("1.5")>0;
 			isJava17 = version.compareTo("1.6")>0;
+            isJava18 = version.compareTo("1.7")>0;
 		}
 	}
 			
@@ -924,6 +925,11 @@ public class IJ {
 	public static boolean isJava17() {
 		return isJava17;
 	}
+    
+    /** Returns true if ImageJ is running on a Java 1.7 or greater JVM. */
+	public static boolean isJava18() {
+		return isJava18;
+	}
 
 	/** Returns true if ImageJ is running on Linux. */
 	public static boolean isLinux() {
@@ -1416,6 +1422,27 @@ public class IJ {
 		}
 		return img;
 	}
+    
+    /** Returns, as an array of strings, a list of the LUTs in the Image/Lookup Tables menu. */
+	public static String[] getLuts() {
+		ArrayList list = new ArrayList();
+		Hashtable commands = Menus.getCommands();
+		Menu lutsMenu = Menus.getImageJMenu("Image>Lookup Tables");
+		if (commands==null || lutsMenu==null)
+			return new String[0];
+		for (int i=0; i<lutsMenu.getItemCount(); i++) {
+			MenuItem menuItem = lutsMenu.getItem(i);
+			if (menuItem.getActionListeners().length == 0) // separator?
+				continue;
+			String label = menuItem.getLabel();
+			if (label.equals("Invert LUT") || label.equals("Apply LUT"))
+				continue;
+			String command = (String)commands.get(label);
+			if (command==null || command.startsWith("ij.plugin.LutLoader"))
+				list.add(label);
+		}
+		return (String[])list.toArray(new String[list.size()]);
+	}
 	
 	/** Returns the active image or stack slice as an ImageProcessor, or displays
 		an error message and aborts the plugin or macro if no images are open. */
@@ -1434,6 +1461,11 @@ public class IJ {
 		return ImageJ.VERSION;
 	}
 	
+	/** Returns the AstroImageJ version number as a string. */
+	public static String getAstroVersion() {
+		return ImageJ.ASTROVERSION;
+	}
+ 
 	/** Returns the ImageJ version and build number as a String, for 
 		example "1.46n05", or 1.46n99 if there is no build number. */
 	public static String getFullVersion() {
