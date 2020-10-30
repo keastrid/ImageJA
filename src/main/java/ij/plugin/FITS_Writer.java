@@ -41,11 +41,11 @@ public class FITS_Writer implements PlugIn {
 			path = sd.getDirectory()+sd.getFileName();
 		}
 
-		// GET FILE
+		/*// GET FILE
 		File f = new File(path);
 		String directory = f.getParent()+File.separator;
 		String name = f.getName();
-		if (f.exists()) f.delete();
+		if (f.exists()) f.delete();*/
 		int numBytes = 0;
         
         cal = imp.getCalibration();
@@ -80,6 +80,7 @@ public class FITS_Writer implements PlugIn {
 //		if (hdr == null)
 //			createHeader(path, ip, numBytes);
 //		else
+		clearFile(path);
         createHeader(hdr, path, ip, numBytes);
 
 		// WRITE DATA
@@ -236,7 +237,7 @@ public class FITS_Writer implements PlugIn {
                 Properties props = img.getProperties();
                 if (props == null)
                     return null;
-                content = (String)props.getProperty ("Info");  
+                content = props.getProperty ("Info");
             }
         }
 		if (content == null)
@@ -348,6 +349,22 @@ public class FITS_Writer implements PlugIn {
             filler[i] = ' ';
         appendFile(end, path);
         appendFile(filler, path);
-        }
+	}
+
+	/**
+	 * Restarts file at 'path' to beginning of file
+	 */
+	void clearFile(String path) {
+		try {
+			FileWriter output = new FileWriter(path, false);
+			output.close();
+		}
+		catch (IOException e) {
+			IJ.showStatus("Error writing file!");
+			return;
+		}
+	}
+
+
 
     }

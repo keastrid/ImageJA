@@ -21,6 +21,13 @@ import ij.io.SaveDialog;
 public class PlotWindow extends ImageWindow implements ActionListener, ItemListener,
 	ClipboardOwner, ImageListener, RoiListener, Runnable {
 
+	private static final int WIDTH = 600;
+	private static final int HEIGHT = 340;
+	private static final int FONT_SIZE = 14;
+	private static final String PREFS_WIDTH = "pp.width";
+	private static final String PREFS_HEIGHT = "pp.height";
+	private static final String PREFS_FONT_SIZE = "pp.fontsize";
+
 	/** @deprecated */
 	public static final int CIRCLE = Plot.CIRCLE;
 	/** @deprecated */
@@ -42,9 +49,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	/** Interpolate line profiles. To set, use Edit/Options/Plots or setOption("InterpolateLines",boolean). */
 	public static boolean interpolate = true;
 	// default values for new installations; values will be then saved in prefs
-	private static final int WIDTH = 600;
-	private static final int HEIGHT = 340;
-	private static int defaultFontSize = 14; 
+	private static int defaultFontSize = Prefs.getInt(PREFS_FONT_SIZE, FONT_SIZE);
 	/** The width of the plot (without frame) in pixels. */
 	public static int plotWidth = WIDTH;
 	/** The height of the plot in pixels. */
@@ -58,10 +63,6 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	 *	only min&max value of the axes are given */
 	public static boolean noTicks;
 
-
-	private static final String PREFS_WIDTH = "pp.width";
-	private static final String PREFS_HEIGHT = "pp.height";
-	private static final String PREFS_FONT_SIZE = "pp.fontsize";
 	private static final String OPTIONS = "pp.options";
 	private static final int SAVE_X_VALUES = 1;
 	private static final int AUTO_CLOSE = 2;
@@ -106,7 +107,6 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		autoClose = (options&AUTO_CLOSE)!=0;
 		plotWidth = Prefs.getInt(PREFS_WIDTH, WIDTH);
 		plotHeight = Prefs.getInt(PREFS_HEIGHT, HEIGHT);
-		defaultFontSize = fontSize = Prefs.getInt(PREFS_FONT_SIZE, defaultFontSize);
 		Dimension screen = IJ.getScreenSize();
 		if (plotWidth>screen.width && plotHeight>screen.height) {
 			plotWidth = WIDTH;
@@ -344,7 +344,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		dataPopupMenu = new PopupMenu();
 		GUI.scalePopupMenu(dataPopupMenu);
 		menuItems[SAVE] = addPopupItem(dataPopupMenu, "Save Data...");
-		menuItems[COPY] = addPopupItem(dataPopupMenu, "Copy 1st Data Set");
+		menuItems[COPY] = addPopupItem(dataPopupMenu, getTitle().startsWith("Seeing Profile")?"Save Aperture":"Copy...");
 		menuItems[COPY_ALL] = addPopupItem(dataPopupMenu, "Copy All Data");
 		menuItems[LIST_SIMPLE] = addPopupItem(dataPopupMenu, "List (Simple Headings)");
 		dataPopupMenu.addSeparator();
@@ -407,8 +407,17 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		} else if (b==more) {
 			enableDisableMenuItems();
 			morePopupMenu.show((Component)b, 1, 1);
-		} else if (b==menuItems[SAVE])
-			saveAsText();
+		} else if (b==menuItems[SAVE]) {
+			String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
+			SaveDialog sf = new SaveDialog("Save plot as PNG",fileName, ".png");
+			if (sf.getDirectory() == null || sf.getFileName() == null) return;
+			IJ.runPlugIn(imp, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
+		} else if (getTitle().startsWith("Seeing Profile")) {
+			Prefs.set("aperture.radius",Prefs.get("seeingprofile.radius", 20));
+			Prefs.set("aperture.rback1",Prefs.get("seeingprofile.rback1", 30));
+			Prefs.set("aperture.rback2",Prefs.get("seeingprofile.rback2", 40));
+			Prefs.set("setaperture.aperturechanged",true);
+		}
 		else if (b==menuItems[COPY])
 			copyToClipboard(false);
 		else if (b==menuItems[COPY_ALL])
@@ -907,7 +916,6 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	
 	public static void setDefaultFontSize(int size) {
 		if (size < 9) size = 9;
-		if (size > 36) size = 36;
 		defaultFontSize = size;
 	}
 

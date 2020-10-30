@@ -231,6 +231,7 @@ public class HyperStackConverter implements PlugIn {
 		if (imp!=imp2) {
 			imp2.setOverlay(imp.getOverlay());
 			imp.hide();
+			imp2.show();
 			WindowManager.setCurrentWindow(imp2.getWindow());
 		}
 		if (Recorder.record && Recorder.scriptMode()) {
@@ -312,6 +313,7 @@ public class HyperStackConverter implements PlugIn {
 		if (imp!=imp2) {
 			imp2.setOverlay(imp.getOverlay());
 			imp.hide();
+			imp2.show();
 		}
 		if (Recorder.record && Recorder.scriptMode())
 			Recorder.recordCall("HyperStackConverter.toStack(imp);");

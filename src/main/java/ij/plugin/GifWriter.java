@@ -77,9 +77,12 @@ public class GifWriter implements PlugIn {
 		}
 		ge.start(path);
 		ImagePlus tmp = new ImagePlus();
+		int origSlice = imp.getSlice();
 		for (int i=1; i<=nSlices; i++) {
 			IJ.showStatus("writing: "+i+"/"+nSlices);
 			IJ.showProgress((double)i/nSlices);
+			imp.setSlice(i);
+			imp.updateAndDraw();
 			tmp.setProcessor(null, stack.getProcessor(i));
 			if (overlay!=null) {
 				Overlay overlay2 = overlay.duplicate();
@@ -100,6 +103,7 @@ public class GifWriter implements PlugIn {
 					showErrors = false;
 				}
 			}
+			imp.setSlice(origSlice);
 		}	
 		ge.finish();
 		IJ.showStatus("");

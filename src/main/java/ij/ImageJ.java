@@ -71,19 +71,20 @@ The following command line options are recognized by ImageJ:
   -debug
      Runs ImageJ in debug mode
 </pre>
-@author Wayne Rasband (wsr@nih.gov)
+@author Wayne Rasband (rasband@gmail.com)
 */
 public class ImageJ extends Frame implements ActionListener, 
 	MouseListener, KeyListener, WindowListener, ItemListener, Runnable {
 
 	/** Plugins should call IJ.getVersion() or IJ.getFullVersion() to get the version string. */
-	public static final String VERSION = "1.53d";
-	public static final String BUILD = "";  //74
+	public static final String VERSION = "1.53f";
+	public static final String BUILD = "51";
 	public static Color backgroundColor = new Color(237,237,237);
 	/** SansSerif, 12-point, plain font. */
 	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
 	/** Address of socket where Image accepts commands */
 	public static final int DEFAULT_PORT = 57294;
+	public static final String ASTROVERSION = "5.0.0.0";
 	
 	/** Run as normal application. */
 	public static final int STANDALONE = 0;
@@ -139,7 +140,7 @@ public class ImageJ extends Frame implements ActionListener,
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
 	public ImageJ(java.applet.Applet applet, int mode) {
-		super("ImageJ");
+		super("AstroImageJ");
 		if ((mode&DEBUG)!=0)
 			IJ.setDebugMode(true);
 		mode = mode & 255;
@@ -231,7 +232,7 @@ public class ImageJ extends Frame implements ActionListener,
  	
  	private void loadCursors() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
-		String path = Prefs.getImageJDir()+"images/crosshair-cursor.gif";
+		String path = Prefs.getImageJDir()+"/astronomy_icon.gif";
 		File f = new File(path);
 		if (!f.exists())
 			return;
@@ -276,8 +277,8 @@ public class ImageJ extends Frame implements ActionListener,
 	}
 	
 	public Point getPreferredLocation() {
-		int ijX = Prefs.getInt(IJ_X,-99);
-		int ijY = Prefs.getInt(IJ_Y,-99);
+		int ijX = Prefs.getInt(IJ_X,10);
+		int ijY = Prefs.getInt(IJ_Y,10);
 		Rectangle maxBounds = GUI.getMaxWindowBounds();
 		//System.out.println("getPreferredLoc1: "+ijX+" "+ijY+" "+maxBounds);
 		if (ijX>=maxBounds.x && ijY>=maxBounds.y && ijX<(maxBounds.x+maxBounds.width-75)
@@ -476,8 +477,8 @@ public class ImageJ extends Frame implements ActionListener,
 			switch (keyChar) {
 				case '<': case ',': if (isStack) cmd="Previous Slice [<]"; break;
 				case '>': case '.': case ';': if (isStack) cmd="Next Slice [>]"; break;
-				case '+': case '=': cmd="In [+]"; break;
-				case '-': cmd="Out [-]"; break;
+				case '+': case '=': cmd=""; break;
+				case '-': cmd=""; break;
 				case '/': cmd="Reslice [/]..."; break;
 				default:
 			}
@@ -485,7 +486,7 @@ public class ImageJ extends Frame implements ActionListener,
 
 		if (cmd==null) {
 			switch (keyCode) {
-				case KeyEvent.VK_TAB: WindowManager.putBehind(); return;				
+				//case KeyEvent.VK_TAB: WindowManager.putBehind(); return;
 				case KeyEvent.VK_BACK_SPACE: case KeyEvent.VK_DELETE:
 					if (!(shift||control||alt||meta)) {
 						if (deleteOverlayRoi(imp))
@@ -497,15 +498,15 @@ public class ImageJ extends Frame implements ActionListener,
 					}
 					break;
 				//case KeyEvent.VK_BACK_SLASH: cmd=IJ.altKeyDown()?"Animation Options...":"Start Animation"; break;
-				case KeyEvent.VK_EQUALS: cmd="In [+]"; break;
-				case KeyEvent.VK_MINUS: cmd="Out [-]"; break;
+				case KeyEvent.VK_EQUALS: cmd=""; break;
+				case KeyEvent.VK_MINUS: cmd=""; break;
 				case KeyEvent.VK_SLASH: case 0xbf: cmd="Reslice [/]..."; break;
 				case KeyEvent.VK_COMMA: case 0xbc: if (isStack) cmd="Previous Slice [<]"; break;
 				case KeyEvent.VK_PERIOD: case 0xbe: if (isStack) cmd="Next Slice [>]"; break;
 				case KeyEvent.VK_LEFT: case KeyEvent.VK_RIGHT: case KeyEvent.VK_UP: case KeyEvent.VK_DOWN: // arrow keys
 					if (imp==null) return;
 					Roi roi = imp.getRoi();
-					if (IJ.shiftKeyDown()&&imp==Orthogonal_Views.getImage())
+					if (shift&&imp==Orthogonal_Views.getImage())
 						return;
 					if (IJ.isMacOSX() && IJ.isJava18()) {
 						RoiManager rm = RoiManager.getInstance();
@@ -513,16 +514,16 @@ public class ImageJ extends Frame implements ActionListener,
 						if (rmActive && (keyCode==KeyEvent.VK_DOWN||keyCode==KeyEvent.VK_UP))
 						  rm.repaint();
 					}
-					boolean stackKey = imp.getStackSize()>1 && (roi==null||IJ.shiftKeyDown());
-					boolean zoomKey = roi==null || IJ.shiftKeyDown() || IJ.controlKeyDown();
+					boolean stackKey = imp.getStackSize()>1 && (roi==null||shift);
+					boolean zoomKey = roi==null || shift || control;
 					if (stackKey && keyCode==KeyEvent.VK_RIGHT)
 							cmd="Next Slice [>]";
 					else if (stackKey && keyCode==KeyEvent.VK_LEFT)
 							cmd="Previous Slice [<]";
 					else if (zoomKey && keyCode==KeyEvent.VK_DOWN && !ignoreArrowKeys(imp) && Toolbar.getToolId()<Toolbar.SPARE6)
-							cmd="Out [-]";
+							cmd="";
 					else if (zoomKey && keyCode==KeyEvent.VK_UP && !ignoreArrowKeys(imp) && Toolbar.getToolId()<Toolbar.SPARE6)
-							cmd="In [+]";
+							cmd="";
 					else if (roi!=null) {
 						if ((flags & KeyEvent.ALT_MASK)!=0 || (flags & KeyEvent.CTRL_MASK)!=0)
 							roi.nudgeCorner(keyCode);
@@ -541,7 +542,7 @@ public class ImageJ extends Frame implements ActionListener,
 		
 		if (cmd!=null && !cmd.equals("")) {
 			commandName = cmd;
-			if (cmd.equals("Fill")||cmd.equals("Draw"))
+			if (!control && !meta && (cmd.equals("Fill")||cmd.equals("Draw")))
 				hotkey = true;
 			if (cmd.charAt(0)==MacroInstaller.commandPrefix)
 				MacroInstaller.runMacroShortcut(cmd);
@@ -830,6 +831,17 @@ public class ImageJ extends Frame implements ActionListener,
 		if (applet==null) {
 			saveWindowLocations();
 			Prefs.set(ImageWindow.LOC_KEY,null); // don't save image window location
+			Frame[] dp = Frame.getFrames();
+			for (int i=0; i<dp.length;i++) {
+				if (dp[i].getTitle().equals("CCD Data Processor") ||
+						dp[i].getTitle().equals("Multi-plot Main") ||
+						dp[i].getTitle().equals("Coordinate Converter") ||
+						dp[i].getClass().getName().contains("AstroStackWindow")) {
+					WindowEvent wev = new WindowEvent(dp[i], WindowEvent.WINDOW_CLOSING);
+					Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+					IJ.wait(100);
+				}
+			}
 			Prefs.savePreferences();
 		}
 		IJ.cleanup();

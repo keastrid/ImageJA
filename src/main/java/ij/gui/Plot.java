@@ -138,7 +138,7 @@ public class Plot implements Cloneable {
 	public static final int RIGHT_MARGIN = 18;
 	/** The default margin width above the plot frame
 	 *	@deprecated Not a fixed value any more, use getDrawingFrame() to get the drawing area */
-	public static final int TOP_MARGIN = 15;
+	public static final int TOP_MARGIN = 50;
 	/** The default margin width below the plot frame
 	 *	@deprecated Not a fixed value any more, use getDrawingFrame() to get the drawing area */
 	public static final int BOTTOM_MARGIN = 40;
@@ -177,7 +177,6 @@ public class Plot implements Cloneable {
 	int preferredPlotWidth = PlotWindow.plotWidth;  //default size of plot frame (not taking 'High-Resolution' scale factor into account)
 	int preferredPlotHeight = PlotWindow.plotHeight;
 
-
 	double xMin = Double.NaN, xMax, yMin, yMax;		//current plot range, logarithm if log axis
 	double[] currentMinMax = new double[]{Double.NaN, 0, Double.NaN, 0}; //current plot range, xMin, xMax, yMin, yMax (values, not logarithm if log axis)
 	double[] defaultMinMax = new double[]{Double.NaN, 0, Double.NaN, 0}; //default plot range
@@ -191,7 +190,7 @@ public class Plot implements Cloneable {
 	Font currentFont = defaultFont;                 // font as changed by setFont or setFontSize, must never be null
 	private double xScale, yScale;                  // pixels per data unit
 	private int xBasePxl, yBasePxl;                 // pixel coordinates corresponding to 0
-	private int maxIntervals = 12;                  // maximum number of intervals between ticks or grid lines
+	private int maxIntervals = 50;                  // maximum number of intervals between ticks or grid lines
 	private int tickLength = 7;                     // length of major ticks
 	private int minorTickLength = 3;                // length of minor ticks
 	private Color gridColor = new Color(0xc0c0c0);  // light gray
@@ -912,6 +911,16 @@ public class Plot implements Cloneable {
 	 *  the lower right corner. Uses the justification specified by setJustification().
 	 *  When called with the same position as the previous addLabel call, the text of that previous call is replaced */
 	public void addLabel(double x, double y, String label) {
+		if (textLoc!=null && x==textLoc.getX() && y==textLoc.getY())
+			allPlotObjects.set(textIndex, new PlotObject(label, x, y, currentJustification, currentFont, currentColor, PlotObject.NORMALIZED_LABEL));
+		else {
+			allPlotObjects.add(new PlotObject(label, x, y, currentJustification, currentFont, currentColor, PlotObject.NORMALIZED_LABEL));
+			textLoc = new Point2D.Double(x,y);
+			textIndex = allPlotObjects.size()-1;
+		}
+	}
+
+	public void addTitle(double x, double y, String label) {
 		if (textLoc!=null && x==textLoc.getX() && y==textLoc.getY())
 			allPlotObjects.set(textIndex, new PlotObject(label, x, y, currentJustification, currentFont, currentColor, PlotObject.NORMALIZED_LABEL));
 		else {
@@ -1958,8 +1967,8 @@ public class Plot implements Cloneable {
 		int addHspace = (int)Tools.getNumberFromList(pp.frame.options, "addhspace="); //user-defined extra space
 		int addVspace = (int)Tools.getNumberFromList(pp.frame.options, "addvspace=");
 		leftMargin	 = sc(LEFT_MARGIN*marginScale + addHspace);
-		rightMargin	 = sc(RIGHT_MARGIN*marginScale + addHspace);
-		topMargin	 = sc(TOP_MARGIN*marginScale + addVspace);
+		rightMargin = sc(RIGHT_MARGIN*marginScale + addHspace);
+		topMargin = sc(TOP_MARGIN*marginScale + addVspace);
 		bottomMargin = sc(BOTTOM_MARGIN*marginScale + 2 + addVspace);
 		if(pp != null && pp.xLabel != null && pp.xLabel.getFont() != null){
 			float numberSize = font.getSize2D();
@@ -4023,7 +4032,7 @@ public class Plot implements Cloneable {
 	public void changeFont(Font font) {
 		setFont(font);
 	}
-
+	
 }
 
 /** This class contains the properties of the plot, such as size, format, range, etc, except for the data+format (plot contents).

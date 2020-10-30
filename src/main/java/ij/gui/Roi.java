@@ -1671,7 +1671,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		imp.draw(clipX, clipY, clipWidth, clipHeight);
 	}
 	
-	void updatePaste() {
+	public void updatePaste() {
 		if (clipboard!=null) {
 			imp.getMask();
 			ImageProcessor ip = imp.getProcessor();
@@ -2798,6 +2798,10 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		listeners.removeElement(listener);
 	}
 	
+	public static Vector getListeners() {
+		return listeners;
+	}
+
 	/**
 	 * Required by the {@link Iterable} interface.
 	 * Use to iterate over the contained coordinates. Usage example: 

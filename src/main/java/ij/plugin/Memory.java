@@ -27,7 +27,7 @@ public class Memory implements PlugIn {
 		String title = "Memory "+(IJ.is64Bit()?"(64-bit)":"(32-bit)");
 		GenericDialog gd = new GenericDialog(title);
 		gd.addNumericField("Maximum memory:", max, 0, 5, "MB");
-		gd.addNumericField("Parallel threads:", Prefs.getThreads(), 0, 5, "");
+		gd.addNumericField("Parallel threads for stacks:", Prefs.getThreads(), 0, 5, "");
 		gd.setInsets(12, 0, 0);
 		gd.addCheckbox("Keep multiple undo buffers", Prefs.keepUndoBuffers);
 		gd.setInsets(12, 0, 0);
@@ -44,23 +44,27 @@ public class Memory implements PlugIn {
 			return;
 		}
 		if (unableToSet && max2!=max)
-			{showError(); return;}
-		if (IJ.isMacOSX() && max2<256)
-			max2 = 256;
-		else if (max2<32)
-			max2 = 32;
+		{showError(); return;}
+		if (max2<256 && IJ.isMacOSX()) max2 = 256;
+		if (max2<32 && IJ.isWindows()) max2 = 32;
 		if (max2==max) return;
 		int limit = IJ.isWindows()?1600:1700;
 		String OSXInfo = "";
+		if (IJ.isMacOSX())
+			OSXInfo = "\n \nOn Max OS X, use\n"
+					+"/Applications/Utilities/Java/Java Preferences\n"
+					+"to switch to a 64-bit version of Java. You may\n"
+					+"also need to run \"AstroImageJ64\" instead of \"AstroImageJ\".";
 		if (max2>=limit && !IJ.is64Bit()) {
-			if (!IJ.showMessageWithCancel(title, 
-			"Note: setting the memory limit to a value\n"
-			+"greater than "+limit+"MB on a 32-bit system\n"
-			+"may cause ImageJ to fail to start. The title of\n"
-			+"the Edit>Options>Memory & Threads dialog\n"
-			+"box changes to \"Memory (64-bit)\" when ImageJ\n"
-			+"is running on a 64-bit version of Java."));
-				return;
+			if (!IJ.showMessageWithCancel(title,
+					"Note: setting the memory limit to a value\n"
+							+"greater than "+limit+"MB on a 32-bit system\n"
+							+"may cause AstroImageJ to fail to start. The title of\n"
+							+"the Edit>Options>Memory & Threads dialog\n"
+							+"box changes to \"Memory (64-bit)\" when AstroImageJ\n"
+							+"is running on a 64-bit version of Java."
+							+ OSXInfo));
+			return;
 		}
 		try {
 			String s2 = s.substring(index2);
@@ -74,47 +78,73 @@ public class Memory implements PlugIn {
 		} catch (IOException e) {
 			String error = e.getMessage();
 			if (error==null || error.equals("")) error = ""+e;
-			String name = IJ.isMacOSX()?"Info.plist":"ImageJ.cfg";
-			String msg = 
-				   "Unable to update the file \"" + name + "\".\n"
-				+ " \n"
-				+ "\"" + error + "\"";
+			String name = IJ.isMacOSX()?"Info.plist":"AstroImageJ.cfg";
+			String msg =
+					"Unable to update the file \"" + name + "\".\n"
+							+ " \n"
+							+ "\"" + error + "\"";
 			IJ.showMessage("Memory", msg);
 			return;
 		}
 		String hint = "";
+		String[] versionPieces = IJ.getAstroVersion().split("\\.");
+		int majorVersion = Integer.parseInt(versionPieces[0]);
 		if (IJ.isWindows() && max2>640 && max2>max)
-			hint = "\nDelete the \"ImageJ.cfg\" file, located in the ImageJ folder,\nif ImageJ fails to start.";
-		IJ.showMessage("Memory", "The new " + max2 +"MB limit will take effect after ImageJ is restarted."+hint);		
+			hint = String.format("\nDelete the \"%s\" file, located in the AstroImageJ folder,\nif AstroImageJ fails to start.",
+					majorVersion > 4 ? "AstroImageJ.l4j.ini" : "AstroImageJ.cfg");
+		IJ.showMessage("Memory", "The new " + max2 +"MB limit will take effect after AstroImageJ is restarted."+hint);
 	}
-	
+
 	public long getMemorySetting() {
 		if (IJ.getApplet()!=null) return 0L;
 		long max = 0L;
-		if (IJ.isMacOSX()) {
-			String appPath = System.getProperty("java.class.path");
-			if (appPath==null) return 0L;
-			int index = appPath.indexOf(".app/");
-			if (index==-1) return 0L;
-			appPath = appPath.substring(0,index+5);
-			max = getMemorySetting(appPath+"Contents/Info.plist");
-		} else
-			max = getMemorySetting("ImageJ.cfg");		
+		String[] versionPieces = IJ.getAstroVersion().split("\\.");
+		int majorVersion = Integer.parseInt(versionPieces[0]);
+		if (IJ.isMacOSX())
+		{
+			if (IJ.is64Bit())
+			{
+				if (majorVersion==4)
+				{
+					max = getMemorySetting("Contents/Info.plist");
+				}
+				else if (majorVersion>4)
+				{
+					max = getMemorySetting("../../Contents/Info.plist");
+				}
+				else
+				{
+					max = getMemorySetting("AstroImageJ64.app/Contents/Info.plist");
+				}
+			}
+			if (max==0L)
+			{
+				max = getMemorySetting("AstroImageJ.app/Contents/Info.plist");
+			}
+		}
+		else
+		{
+			if (IJ.isWindows() && majorVersion > 4) {
+				max = getMemorySetting("AstroImageJ.l4j.ini");
+			} else {
+				max = getMemorySetting("AstroImageJ.cfg");
+			}
+		}
 		return max;
 	}
 
 	void showError() {
 		int max = (int)(maxMemory()/1048576L);
 		String msg =
-			   "ImageJ is unable to change the memory limit. For \n"
-			+ "more information, refer to the installation notes at\n \n"
-			+ "    "+IJ.URL+"/docs/install/\n"
-			+ " \n";
+				"AstroImageJ is unable to change the memory limit. For \n"
+						+ "more information, refer to the installation notes at\n \n"
+						+ "    "+IJ.URL+"/docs/install/\n"
+						+ " \n";
 		if (fileMissing) {
 			if (IJ.isMacOSX())
-				msg += "The ImageJ application (ImageJ.app) was not found.\n \n";
+				msg += "The AstroImageJ application (AstroImageJ.app) was not found.\n \n";
 			else if (IJ.isWindows())
-				msg += "ImageJ.cfg not found.\n \n";
+				msg += "AstroImageJ.cfg not found.\n \n";
 			fileMissing = false;
 		}
 		if (max>0)
@@ -123,13 +153,22 @@ public class Memory implements PlugIn {
 	}
 
 	long getMemorySetting(String file) {
-		String path = file.startsWith("/")?file:Prefs.getImageJDir()+file;
-		if (IJ.debugMode) IJ.log("getMemorySetting: "+path);
+		String path = Prefs.getHomeDir()+File.separator+file;
 		f = new File(path);
 		if (!f.exists()) {
 			fileMissing = true;
 			return 0L;
 		}
+
+		// Ensure that the file is writable
+		if (!f.canWrite()) {
+			try {
+				f.setWritable(true, true);
+			} catch (SecurityException e) {
+				IJ.log("Could not make " + f.toString() + " writable due to permissions.");
+			}
+		}
+
 		long max = 0L;
 		try {
 			int size = (int)f.length();
@@ -158,7 +197,7 @@ public class Memory implements PlugIn {
 
 	/** Returns the maximum amount of memory this JVM will attempt to use. */
 	public long maxMemory() {
-			return Runtime.getRuntime().maxMemory();
+		return Runtime.getRuntime().maxMemory();
 	}
-	
+
 }
