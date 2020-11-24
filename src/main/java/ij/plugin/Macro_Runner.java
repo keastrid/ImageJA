@@ -2,8 +2,6 @@ package ij.plugin;
 import ij.*;
 import ij.io.*;
 import ij.macro.*;
-import ij.text.*;
-import ij.util.*;
 import ij.plugin.frame.*;
 import java.io.*;
 import java.lang.reflect.*;
@@ -34,7 +32,7 @@ public class Macro_Runner implements PlugIn {
 				}
 			}
 		} else if (name.startsWith("JAR:"))
-			runMacroFromJar(name.substring(4), null);
+			runMacroFromJar(getClass().getClassLoader(), name.substring(4), null);
 		else if (name.startsWith("ij.jar:"))
 			runMacroFromIJJar(name, null);
 		else if (name.endsWith("Tool.ijm") || name.endsWith("Tool.txt")
@@ -124,10 +122,9 @@ public class Macro_Runner implements PlugIn {
 		in the plugins folder, in or out of a JAR file, so name conflicts are possible.
 		To avoid name conflicts, it is a good idea to incorporate the plugin
 		or JAR file name in the macro name (e.g., "Image_5D_Macro1.ijm"). */
-	public static String runMacroFromJar(String name, String arg) {
+	public static String runMacroFromJar(ClassLoader pcl, String name, String arg) {
 		String macro = null;
 		try {
-			ClassLoader pcl = IJ.getClassLoader();
 			InputStream is = pcl.getResourceAsStream(name);
 			if (is==null) {
 				IJ.error("Macro Runner", "Unable to load \""+name+"\" from jar file");
@@ -157,7 +154,7 @@ public class Macro_Runner implements PlugIn {
 		name = name.substring(7);
 		String macro = null;
         try {
-			InputStream is = c .getResourceAsStream("/macros/"+name+".txt");
+			InputStream is = c .getResourceAsStream("/macros/" +name+".txt");
 			//IJ.log(is+"  "+("/macros/"+name+".txt"));
 			if (is==null)
 				return runMacroFile(name, arg);

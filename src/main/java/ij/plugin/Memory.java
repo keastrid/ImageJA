@@ -66,6 +66,25 @@ public class Memory implements PlugIn {
 			+ OSXInfo));
 				return;
 		}
+
+		// Ensure that the file is writable
+		if (!f.canWrite()) {
+			try {
+				f.setWritable(true, true);
+			} catch (SecurityException e) {
+				IJ.log("Could not make " + f.toString() + " writable due to permissions.");
+			}
+		}
+
+		if (IJ.isMacOSX() && !f.canWrite()) {
+			try {
+				Process process = Runtime.getRuntime().exec(new String[]{"chmod", "+xrw", f.getAbsolutePath()});
+				process.waitFor();
+			} catch (InterruptedException | IOException e) {
+				IJ.error(e.getMessage());
+			}
+		}
+
 		try {
 			String s2 = s.substring(index2);
 			if (s2.startsWith("g"))
@@ -78,7 +97,7 @@ public class Memory implements PlugIn {
 		} catch (IOException e) {
 			String error = e.getMessage();
 			if (error==null || error.equals("")) error = ""+e;
-			String name = IJ.isMacOSX()?"Info.plist":"AstroImageJ.cfg";
+			String name = "AstroImageJ.l4j.ini";
 			String msg = 
 				   "Unable to update the file \"" + name + "\".\n"
 				+ " \n"
@@ -87,38 +106,20 @@ public class Memory implements PlugIn {
 			return;
 		}
 		String hint = "";
+		String[] versionPieces = IJ.getAstroVersion().split("\\.");
+		int majorVersion = Integer.parseInt(versionPieces[0]);
 		if (IJ.isWindows() && max2>640 && max2>max)
-			hint = "\nDelete the \"AstroImageJ.cfg\" file, located in the AstroImageJ folder,\nif AstroImageJ fails to start.";
+			hint = String.format("\nDelete the \"%s\" file, located in the AstroImageJ folder,\nif AstroImageJ fails to start.",
+					majorVersion > 4 ? "AstroImageJ.l4j.ini" : "AstroImageJ.cfg");
 		IJ.showMessage("Memory", "The new " + max2 +"MB limit will take effect after AstroImageJ is restarted."+hint);		
 	}
 	
 	public long getMemorySetting() {
 		if (IJ.getApplet()!=null) return 0L;
 		long max = 0L;
-        String[] versionPieces = IJ.getAstroVersion().split("\\.");
-        int majorVersion = Integer.parseInt(versionPieces[0]);
-		if (IJ.isMacOSX()) 
-            {
-			if (IJ.is64Bit())
-                {
-                if (majorVersion>3)
-                    {
-                    max = getMemorySetting("Contents/Info.plist");
-                    }
-                else
-                    {
-                    max = getMemorySetting("AstroImageJ64.app/Contents/Info.plist");
-                    }
-                }
-			if (max==0L) 
-                {
-				max = getMemorySetting("AstroImageJ.app/Contents/Info.plist");
-                }
-            }
-        else
-            {
-			max = getMemorySetting("AstroImageJ.cfg");
-            }
+
+        // As of 5.0.0.0, AIJ uses a unified file for memory settings
+		max = getMemorySetting("AstroImageJ.l4j.ini");
 		return max;
 	}
 
@@ -133,7 +134,7 @@ public class Memory implements PlugIn {
 			if (IJ.isMacOSX())
 				msg += "The AstroImageJ application (AstroImageJ.app) was not found.\n \n";
 			else if (IJ.isWindows())
-				msg += "AstroImageJ.cfg not found.\n \n";
+				msg += "AstroImageJ.l4j.ini not found.\n \n";
 			fileMissing = false;
 		}
 		if (max>0)
@@ -148,6 +149,7 @@ public class Memory implements PlugIn {
 			fileMissing = true;
 			return 0L;
 		}
+
 		long max = 0L;
 		try {
 			int size = (int)f.length();

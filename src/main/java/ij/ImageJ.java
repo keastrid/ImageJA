@@ -7,14 +7,11 @@ import java.io.*;
 import java.net.*;
 import java.awt.image.*;
 import ij.gui.*;
-import ij.process.*;
-import ij.io.*;
 import ij.plugin.*;
 import ij.plugin.filter.*;
 import ij.plugin.frame.*;
 import ij.text.*;
 import ij.macro.Interpreter;
-import ij.io.Opener;
 import ij.util.*;
 import javax.swing.ImageIcon;
 
@@ -81,7 +78,7 @@ public class ImageJ extends Frame implements ActionListener,
 	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
 	/** Address of socket where Image accepts commands */
 	public static final int DEFAULT_PORT = 57294;
-    public static final String ASTROVERSION = "3.4.0.21";  //4.0.0.1
+    public static final String ASTROVERSION = "5.0.0.0";
 	
 	/** Run as normal application. */
 	public static final int STANDALONE=0;
@@ -200,7 +197,7 @@ public class ImageJ extends Frame implements ActionListener,
 		} 
 		if (applet==null)
 			IJ.runPlugIn("ij.plugin.DragAndDrop", "");
-		String str = m.getMacroCount()==1?" macro":" macros";
+		String str = m.getMacroCount()==1?" macro": "macros";
 		IJ.showStatus(version()+ m.getPluginCount() + " commands; " + m.getMacroCount() + str);
 		//if (applet==null && !embedded && Prefs.runSocketListener)
 		//	new SocketListener();
@@ -248,9 +245,9 @@ public class ImageJ extends Frame implements ActionListener,
 	}
 	
     void setIcon() throws Exception {
-		URL url = this.getClass().getResource("/astronomy_icon.png");
+		URL url = this.getClass().getClassLoader().getResource("astronomy_icon.png");
 		if (url==null) return;
-		Image img = createImage((ImageProducer)url.getContent());
+		Image img = new ImageIcon(url).getImage();
 		if (img!=null) setIconImage(img);
 	}
 	
@@ -620,7 +617,8 @@ public class ImageJ extends Frame implements ActionListener,
 	}
 
 	public static void main(String args[]) {
-		if (System.getProperty("java.version").substring(0,3).compareTo("1.5")<0) {
+		String[] parsed = System.getProperty("java.specification.version").split("\\.");
+		if (Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0]) < 5) {
 			javax.swing.JOptionPane.showMessageDialog(null,"ImageJ "+VERSION+" requires Java 1.5 or later.");
 			System.exit(0);
 		}

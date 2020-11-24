@@ -17,7 +17,6 @@ import java.util.*;
 import java.awt.*;	
 import java.applet.Applet;
 import java.io.*;
-import java.lang.reflect.*;
 import java.net.*;
 
 
@@ -60,15 +59,14 @@ public class IJ {
 		isWin = osname.startsWith("Windows");
 		isMac = !isWin && osname.startsWith("Mac");
 		isLinux = osname.startsWith("Linux");
-		String version = System.getProperty("java.version").substring(0,3);
-		if (version.compareTo("2.9")<=0) {  // JVM on Sharp Zaurus PDA claims to be "3.1"!
-			isJava2 = version.compareTo("1.1")>0;
-			isJava14 = version.compareTo("1.3")>0;
-			isJava15 = version.compareTo("1.4")>0;
-			isJava16 = version.compareTo("1.5")>0;
-			isJava17 = version.compareTo("1.6")>0;
-            isJava18 = version.compareTo("1.7")>0;
-		}
+		String[] parsed = System.getProperty("java.specification.version").split("\\.");
+		//TODO FIX naming - Java doesn't follow the 1.x scheme on most JVM's now
+		isJava2 = Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0]) > 1;
+		isJava14 = Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0])>3;
+		isJava15 = Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0])>4;
+		isJava16 = Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0])>5;
+		isJava17 = Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0])>6;
+		isJava18 = Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0])>7;
 	}
 			
 	static void init(ImageJ imagej, Applet theApplet) {
@@ -1500,7 +1498,7 @@ public class IJ {
 			return System.getProperty("user.home") + File.separator;
 		else if (title2.equals("startup"))
 			return Prefs.getHomeDir() + File.separator;
-		else if (title2.equals("imagej"))
+		else if (title2.equals("ij"))
 			return getIJDir();
 		else if (title2.equals("current") || title2.equals("default"))
 			return OpenDialog.getDefaultDirectory();
