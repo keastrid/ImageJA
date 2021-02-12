@@ -1,5 +1,6 @@
 package ij.plugin;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.io.*;
 import ij.gui.*;
 import ij.process.*;
@@ -38,7 +39,8 @@ public class GifWriter implements PlugIn {
 		}
 		run(imp, path);
 	}
-	   
+
+	@AstroImageJ(reason = "unknown; add ability to return to original slice", modified = true)
 	private void run(ImagePlus imp, String path) {
 		ImageStack stack = imp.getStack();
 		Overlay overlay = imp.getOverlay();
@@ -77,9 +79,12 @@ public class GifWriter implements PlugIn {
 		}
 		ge.start(path);
 		ImagePlus tmp = new ImagePlus();
+		int origSlice = imp.getSlice();
 		for (int i=1; i<=nSlices; i++) {
 			IJ.showStatus("writing: "+i+"/"+nSlices);
 			IJ.showProgress((double)i/nSlices);
+			imp.setSlice(i);
+			imp.updateAndDraw();
 			tmp.setProcessor(null, stack.getProcessor(i));
 			if (overlay!=null) {
 				Overlay overlay2 = overlay.duplicate();
@@ -100,6 +105,7 @@ public class GifWriter implements PlugIn {
 					showErrors = false;
 				}
 			}
+			imp.setSlice(origSlice);
 		}	
 		ge.finish();
 		IJ.showStatus("");

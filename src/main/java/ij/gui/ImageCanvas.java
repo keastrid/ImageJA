@@ -3,17 +3,18 @@ package ij.gui;
 import java.awt.*;
 import java.util.Properties;
 import java.awt.image.*;
+
+import ij.astro.AstroImageJ;
+import ij.plugin.PointToolOptions;
 import ij.process.*;
 import ij.measure.*;
-import ij.plugin.*;
+import ij.plugin.WandToolOptions;
 import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
-import ij.plugin.filter.Analyzer;
 import ij.plugin.tool.PlugInTool;
 import ij.macro.*;
 import ij.*;
 import ij.util.*;
-import ij.text.*;
 import java.awt.event.*;
 import java.util.*;
 import java.awt.geom.*;
@@ -45,7 +46,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	private Font font;
 	private Rectangle[] labelRects;
     private boolean maxBoundsReset;
-    private Overlay showAllOverlay;
+    @AstroImageJ(reason = "unknown; widen access to protected", modified = true)
+    protected Overlay showAllOverlay;
     private static final int LIST_OFFSET = 100000;
     private static Color showAllColor = Prefs.getColor(Prefs.SHOW_ALL_COLOR, new Color(0, 255, 255));
     private Color defaultColor = showAllColor;
@@ -74,11 +76,20 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	protected int xSrcStart;
 	protected int ySrcStart;
 	protected int flags;
-	
-	private Image offScreenImage;
-	private int offScreenWidth = 0;
-	private int offScreenHeight = 0;
-	private boolean mouseExited = true;
+
+	@AstroImageJ(reason = "unknowm")
+	public int xClicked = 0;
+	@AstroImageJ(reason = "unknowm")
+	public int yClicked = 0;
+
+	@AstroImageJ(reason = "widen access to protected", modified = true)
+	protected Image offScreenImage;
+	@AstroImageJ(reason = "widen access to protected", modified = true)
+	protected int offScreenWidth = 0;
+	@AstroImageJ(reason = "widen access to protected", modified = true)
+	protected int offScreenHeight = 0;
+	@AstroImageJ(reason = "widen access to protected", modified = true)
+	protected boolean mouseExited = true;
 	private boolean customRoi;
 	private boolean drawNames;
 	private AtomicBoolean paintPending;
@@ -264,7 +275,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		}
 	}
 
-    private void drawRoi(Roi roi, Graphics g) {
+	@AstroImageJ(reason = "widen access to protected", modified = true)
+	protected void drawRoi(Roi roi, Graphics g) {
 		if (Interpreter.isBatchMode())
 			return;
 		if (roi==currentRoi) {
@@ -298,7 +310,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		return slice;
 	}
 
-	private void drawOverlay(Overlay overlay, Graphics g) {
+	@AstroImageJ(reason = "widen access to public", modified = true)
+	public void drawOverlay(Overlay overlay, Graphics g) {
 		if (imp!=null && imp.getHideOverlay() && overlay!=showAllOverlay)
 			return;
 		flattening = imp!=null && ImagePlus.flattenTitle.equals(imp.getTitle());
@@ -367,8 +380,9 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		drawNames = false;
 		font = null;
 	}
-    	
-	void drawOverlay(Graphics g) {
+
+	@AstroImageJ(reason = "widen access to public", modified = true)
+	public void drawOverlay(Graphics g) {
 		drawOverlay(imp.getOverlay(), g);
 	}
 
@@ -494,9 +508,10 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		g.setColor(labelColor);
 		g.drawString(label, x+xoffset, y-2+yoffset);
 		g.setColor(defaultColor);
-	} 
+	}
 
-	void drawZoomIndicator(Graphics g) {
+	@AstroImageJ(reason = "widen access to public", modified = true)
+	public void drawZoomIndicator(Graphics g) {
 		if (hideZoomIndicator)
 			return;
 		int x1 = 10;
@@ -568,8 +583,9 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 
     long firstFrame;
     int frames, fps;
-        
-	void showFrameRate(Graphics g) {
+
+	@AstroImageJ(reason = "widen access to protected", modified = true)
+	protected void showFrameRate(Graphics g) {
 		frames++;
 		if (System.currentTimeMillis()>firstFrame+1000) {
 			firstFrame=System.currentTimeMillis();
@@ -724,17 +740,17 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	public void setMagnification(double magnification) {
 		setMagnification2(magnification);
 	}
-		
+
+	@AstroImageJ(reason = "Increase maximum magnification from 32 to 128", modified = true)
 	void setMagnification2(double magnification) {
-		if (magnification>32.0)
-			magnification = 32.0;
-		if (magnification<zoomLevels[0])
-			magnification = zoomLevels[0];
+		if (magnification>128.0) magnification = 128.0;
+		if (magnification<zoomLevels[0]) magnification = zoomLevels[0];
 		this.magnification = magnification;
 		imp.setTitle(imp.getTitle());
 	}
 
 	/** Resizes the canvas when the user resizes the window. */
+	@AstroImageJ(reason = "Add 'seeing profile' exception to scaleToFit check", modified = true)
 	void resizeCanvas(int width, int height) {
 		ImageWindow win = imp.getWindow();
 		//IJ.log("resizeCanvas: "+srcRect+" "+imageWidth+"  "+imageHeight+" "+width+"  "+height+" "+dstWidth+"  "+dstHeight+" "+win.maxBounds);
@@ -743,7 +759,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 				resetMaxBounds(); // Works around problem that prevented window from being larger than maximized size
 			resetMaxBoundsCount++;
 		}
-		if (scaleToFit || IJ.altKeyDown())
+		if (scaleToFit || IJ.altKeyDown()  && !imp.getTitle().startsWith("Seeing Profile"))
 			{fitToWindow(); return;}
 		if (width>imageWidth*magnification)
 			width = (int)(imageWidth*magnification);
@@ -798,11 +814,12 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 			maxBoundsReset = true;
 		}
 	}
-	
+
+	@AstroImageJ(reason = "increase zoom levels to 128 from 32", modified = true)
 	private static final double[] zoomLevels = {
 		1/72.0, 1/48.0, 1/32.0, 1/24.0, 1/16.0, 1/12.0, 
 		1/8.0, 1/6.0, 1/4.0, 1/3.0, 1/2.0, 0.75, 1.0, 1.5,
-		2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 16.0, 24.0, 32.0 };
+		2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 16.0, 24.0, 32.0, 64.0, 128.0 };
 	
 	public static double getLowerZoomLevel(double currentMag) {
 		double newMag = zoomLevels[0];
@@ -815,8 +832,9 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		return newMag;
 	}
 
+	@AstroImageJ(reason = "increase zoom levels to 128 from 32", modified = true)
 	public static double getHigherZoomLevel(double currentMag) {
-		double newMag = 32.0;
+		double newMag = 128.0;
 		for (int i=zoomLevels.length-1; i>=0; i--) {
 			if (zoomLevels[i]>currentMag)
 				newMag = zoomLevels[i];
@@ -830,8 +848,9 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		the source rectangle (srcRect) smaller and centers it on the position in the
 		image where the cursor was when zooming has started.
 		Note that sx and sy are screen coordinates. */
+	@AstroImageJ(reason = "increase zoom levels to 128 from 32", modified = true)
 	public void zoomIn(int sx, int sy) {
-		if (magnification>=32) return;
+		if (magnification>=128) return;
 		scaleToFit = false;
 	    boolean mouseMoved = sqr(sx-lastZoomSX) + sqr(sy-lastZoomSY) > MAX_MOUSEMOVE_ZOOM*MAX_MOUSEMOVE_ZOOM;
 		lastZoomSX = sx;
@@ -1584,7 +1603,10 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		}
 	}
 
+	@AstroImageJ(reason = "Update x/yClicked", modified = true)
 	public void mouseReleased(MouseEvent e) {
+		xClicked = e.getX();
+		yClicked = e.getY();
 
 		if (pressTimer!=null) {
 			pressTimer.cancel();

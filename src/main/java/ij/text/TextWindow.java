@@ -1,5 +1,6 @@
 package ij.text;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.io.*;
 import ij.gui.*;
 import ij.plugin.filter.Analyzer;
@@ -76,6 +77,7 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		create(title, textPanel, width, height);
 	}
 
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	private void create(String title, TextPanel textPanel, int width, int height) {
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
 		if (IJ.isLinux()) setBackground(ImageJ.backgroundColor);
@@ -96,7 +98,7 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		WindowManager.addWindow(this);
 		Point loc=null;
 		int w=0, h=0;
-		if (title.equals("Results")) {
+		if (title.contains("Results") || title.contains("Measure")) {
 			loc = Prefs.getLocation(LOC_KEY);
 			w = (int)Prefs.get(WIDTH_KEY, 0.0);
 			h = (int)Prefs.get(HEIGHT_KEY, 0.0);
@@ -141,14 +143,15 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		} else
 			dispose();
 	}
-	
+
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	void addMenuBar() {
 		mb = new MenuBar();
 		if (Menus.getFontSize()!=0)
 			mb.setFont(Menus.getFont());
 		Menu m = new Menu("File");
 		m.add(new MenuItem("Save As...", new MenuShortcut(KeyEvent.VK_S)));
-		if (getTitle().equals("Results")) {
+		if (getTitle().contains("Results") || getTitle().contains("Measure")) {
 			m.add(new MenuItem("Rename..."));
 			m.add(new MenuItem("Duplicate..."));
 		}
@@ -176,12 +179,12 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		m.add(new MenuItem("Save Settings"));
 		m.addActionListener(this);
 		mb.add(m);
-		if (getTitle().equals("Results")) {
-			m = new Menu("Results");
-			m.add(new MenuItem("Clear Results"));
-			m.add(new MenuItem("Summarize"));
-			m.add(new MenuItem("Distribution..."));
-			m.add(new MenuItem("Set Measurements..."));
+		if (getTitle().contains("Results") || getTitle().contains("Measure")) {
+			if (getTitle().contains("Measure")) m = new Menu("Options"); else m = new Menu("Results");
+			if (getTitle().contains("Measure")) m.add(new MenuItem("Clear Results"));
+			if (getTitle().contains("Measure")) m.add(new MenuItem("Summarize"));
+			if (getTitle().contains("Measure")) m.add(new MenuItem("Distribution..."));
+			if (getTitle().contains("Measure")) m.add(new MenuItem("Set Measurements..."));
 			m.add(new MenuItem("Sort..."));
 			m.add(new MenuItem("Plot..."));
 			m.add(new MenuItem("Options..."));
@@ -283,8 +286,9 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 	
 	/** Closes this TextWindow. Display a "save changes" dialog
 		if this is the "Results" window and 'showDialog' is true. */
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	public void close(boolean showDialog) {
-		if (getTitle().equals("Results")) {
+		if (getTitle().contains("Results") || getTitle().contains("Measure")) {
 			if (showDialog && !Analyzer.resetCounter())
 				return;
 			IJ.setTextPanel(null);

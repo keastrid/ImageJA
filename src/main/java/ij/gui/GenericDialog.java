@@ -1,5 +1,6 @@
 package ij.gui;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.plugin.frame.Recorder;
 import ij.plugin.ScreenGrabber;
 import ij.plugin.filter.PlugInFilter;
@@ -76,6 +77,10 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	private char echoChar;
 	private boolean hideCancelButton;
 	private boolean centerDialog = true;
+	@AstroImageJ(reason = "unknown")
+	private boolean positionDialog = false;
+	@AstroImageJ(reason = "unknown")
+	private int xPosition = 0, yPosition = 0;
 	private String helpURL;
 	private boolean smartRecording;
 	private Vector imagePanels;
@@ -87,6 +92,15 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	private Label lastLabelAdded;
 	private int[] windowIDs;
 	private String[] windowTitles;
+
+	@AstroImageJ(reason = "unknown")
+	public GenericDialog(String title, int x, int y) {
+		this(title, WindowManager.getCurrentImage()!=null ?
+				WindowManager.getCurrentImage().getWindow() : IJ.getInstance()!=null ? IJ.getInstance() : new Frame());
+		positionDialog = true;
+		xPosition = x;
+		yPosition = y;
+	}
 
 
     /** Creates a new GenericDialog with the specified title. Uses the current image
@@ -589,7 +603,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		c.gridx = 0; c.gridy++;
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		c.anchor = GridBagConstraints.WEST;
-		c.insets = getInsets(10, 0, 0, 0);
+		c.insets = getInsets(0, 20, 0, 0);
 		addToSameRow = false;
 		add(panel, c);
     }
@@ -764,7 +778,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		if (defaultValue>maxValue) defaultValue=maxValue;
 		int digits = 0;
 		double scale = 1.0;
-		if ((maxValue-minValue)<=5.0 && (minValue!=(int)minValue||maxValue!=(int)maxValue||defaultValue!=(int)defaultValue)) {
+		if ((maxValue-minValue)<=5.1 && ((minValue != 0.0 && minValue!=(int)minValue)||maxValue!=(int)maxValue||defaultValue!=(int)defaultValue)) {
 			scale = 50.0;
 			minValue *= scale;
 			maxValue *= scale;
@@ -1410,8 +1424,9 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 			&& choice==null && slider==null && radioButtonGroups==null && textArea1==null)
 				okay.requestFocusInWindow();
 			setup();
-			if (centerDialog)
-				GUI.centerOnImageJScreen(this);
+			if (positionDialog)
+				setLocation(xPosition, yPosition);
+			else if (centerDialog) GUI.center(this);
 			setVisible(true);					//except for NonBlockingGenericDialog, returns after 'dispose' by OK or Cancel
 
 		}

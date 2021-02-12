@@ -4,6 +4,7 @@ import java.awt.image.*;
 import java.util.Properties;
 import java.awt.event.*;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.io.*;
 import ij.measure.*;
@@ -24,13 +25,18 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	protected ImagePlus imp;
 	protected ImageJ ij;
 	protected ImageCanvas ic;
+	@AstroImageJ(reason = "unknown; unused")
+	public String extraInfo = "";
 	private double initialMagnification = 1;
 	private int newWidth, newHeight;
-	protected boolean closed;
+	@AstroImageJ(reason = "Widen access", modified = true)
+	protected boolean closed, hasMenus;
 	private boolean newCanvas;
-	private boolean unzoomWhenMinimizing = true;
+	@AstroImageJ(reason = "Widen access", modified = true)
+	protected boolean unzoomWhenMinimizing = true;
 	Rectangle maxWindowBounds; // largest possible window on this screen
-	Rectangle maxBounds; // Size of this window after it is maximized
+	@AstroImageJ(reason = "Widen access", modified = true)
+	protected Rectangle maxBounds; // Size of this window after it is maximized
 	long setMaxBoundsTime;
 	private int sliderHeight;
 
@@ -65,7 +71,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
     public ImageWindow(ImagePlus imp) {
     	this(imp, null);
    }
-    
+
+   @AstroImageJ(reason = "Add checks for AIJ windows to control their positioning", modified = true)
     public ImageWindow(ImagePlus imp, ImageCanvas ic) {
 		super(imp.getTitle());
 		if (SCALE>1.0) {
@@ -111,10 +118,13 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			else
 				ic.update(previousWindow.getCanvas());
 			Point loc = previousWindow.getLocation();
-			setLocation(loc.x, loc.y);
+			if (this instanceof PlotWindow)
+				setLocation((int)Prefs.get("plot2.plotFrameLocationX", 10), (int)Prefs.get("plot2.plotFrameLocationY", 10));
+			else
+				setLocation(loc.x, loc.y);
 			if (!(this instanceof StackWindow || this instanceof PlotWindow)) { //layout now unless components will be added later
 				pack();
-				show();
+				if (!Prefs.get("Astronomy_Tool.autoConvert", false) || (this instanceof HistogramWindow) || this.getTitle().startsWith("Profile of") || this.getTitle().startsWith("About")) show();
 			}
 			if (ic.getMagnification()!=0.0)
 				imp.setTitle(imp.getTitle());
@@ -138,7 +148,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			}
 			if (nextLocation!=null)
 				setLocation(nextLocation);
-			else if (centerOnScreen)
+			else if (!(this instanceof PlotWindow) && centerOnScreen)
 				GUI.center(this);
 			nextLocation = null;
 			centerOnScreen = false;
@@ -146,10 +156,12 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 				WindowManager.setTempCurrentImage(imp);
 				Interpreter.addBatchModeImage(imp);
 			} else
-				show();
+			if (!Prefs.get("Astronomy_Tool.autoConvert", false) || (this instanceof PlotWindow) ||
+					(this instanceof HistogramWindow) || this.getTitle().startsWith("Profile of") || this.getTitle().startsWith("About")) show();
 		}
      }
-    
+
+     @AstroImageJ(reason = "Add checks for AIJ windows to control their positioning", modified = true)
 	private void setLocationAndSize(boolean updating) {
 		if (imp==null)
 			return;
@@ -231,6 +243,9 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		ic.setMagnification(mag);
 		if (y+height*mag>screenHeight)
 			y = ybase;
+		if (this instanceof PlotWindow && !updating)
+			setLocation((int)Prefs.get("plot2.plotFrameLocationX", 10), (int)Prefs.get("plot2.plotFrameLocationY", 10));
+		else if (!updating) setLocation(x, y);
         if (Prefs.open100Percent && ic.getMagnification()<1.0) {
 			while(ic.getMagnification()<1.0)
 				ic.zoomIn(0, 0);
@@ -244,7 +259,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		}
 	}
 
-	Rectangle getMaxWindow(int xloc, int yloc) {
+	@AstroImageJ(reason = "Widen access", modified = true)
+	protected Rectangle getMaxWindow(int xloc, int yloc) {
 		return GUI.getMaxWindowBounds(new Point(xloc, yloc));
 	}
 
@@ -384,18 +400,24 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		return IJ.d2s(n,digits);
     }
 
+    @AstroImageJ(reason = "Disable final check for extra width", modified = true)
     public void paint(Graphics g) {
 		drawInfo(g);
 		Rectangle r = ic.getBounds();
 		int extraWidth = MIN_WIDTH - r.width;
 		int extraHeight = MIN_HEIGHT - r.height;
-		if (extraWidth<=0 && extraHeight<=0 && !Prefs.noBorder && !IJ.isLinux())
-			g.drawRect(r.x-1, r.y-1, r.width+1, r.height+1);
+		/*if (extraWidth<=0 && extraHeight<=0 && !Prefs.noBorder && !IJ.isLinux())
+			g.drawRect(r.x-1, r.y-1, r.width+1, r.height+1);*/
     }
     
 	/** Removes this window from the window list and disposes of it.
 		Returns false if the user cancels the "save changes" dialog. */
+	@AstroImageJ(reason = "Save AIJ plot window location", modified = true)
 	public boolean close() {
+		if (this instanceof PlotWindow) {
+			Prefs.set("plot2.plotFrameLocationX",getX());
+			Prefs.set("plot2.plotFrameLocationY",getY());
+		}
 		boolean isRunning = running || running2;
 		running = running2 = false;
 		if (imp==null) return true;
@@ -528,8 +550,9 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		wHeight = Math.min(wHeight, maxWindow.height);
 		return new Rectangle(xloc, maxWindow.y, wWidth, wHeight);
 	}
-	
-	Dimension getExtraSize() {
+
+	@AstroImageJ(reason = "Widen access", modified = true)
+	protected Dimension getExtraSize() {
 		Insets insets = getInsets();
 		int extraWidth = insets.left+insets.right + 10;
 		int extraHeight = insets.top+insets.bottom + 10;
@@ -607,12 +630,13 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			WindowManager.removeWindow(this);
 		}
 	}
-	
+
+	@AstroImageJ(reason = "Always maximize", modified = true)
 	public void windowStateChanged(WindowEvent e) {
 		int oldState = e.getOldState();
 		int newState = e.getNewState();
 		if (IJ.debugMode) IJ.log("windowStateChanged: "+oldState+" "+newState);
-		if ((oldState&Frame.MAXIMIZED_BOTH)==0 && (newState&Frame.MAXIMIZED_BOTH)!=0)
+		//if ((oldState&Frame.MAXIMIZED_BOTH)==0 && (newState&Frame.MAXIMIZED_BOTH)!=0)
 			maximize();
 	}
 

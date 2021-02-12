@@ -1,7 +1,10 @@
 package ij.gui;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.measure.Calibration;
 import ij.plugin.frame.SyncWindows;
+import ij.process.ImageProcessor;
+
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.event.*;
@@ -24,6 +27,7 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		this(imp, null);
 	}
 
+	@AstroImageJ(reason = "Add check for autoConvert pref before calling show()", modified = true)
     public StackWindow(ImagePlus imp, ImageCanvas ic) {
 		super(imp, ic);
 		addScrollbars(imp);
@@ -33,7 +37,7 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		pack();
 		ic = imp.getCanvas();
 		if (ic!=null) ic.setMaxBounds();
-		show();
+		if (!Prefs.get("Astronomy_Tool.autoConvert", false)) show();
 		int previousSlice = imp.getCurrentSlice();
 		if (previousSlice>1 && previousSlice<=imp.getStackSize())
 			imp.setSlice(previousSlice);
@@ -160,7 +164,12 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 			throw new RuntimeException("Unknownsource:"+source);
 	}
 
+	@AstroImageJ(reason = "Reset ip if imp is RGB", modified = true)
 	void updatePosition() {
+		if (imp.getType()==ImagePlus.COLOR_RGB) {
+			ImageProcessor ip = imp.getProcessor();
+			ip.reset();
+		}
 		slice = (t-1)*nChannels*nSlices + (z-1)*nChannels + c;
 		imp.updatePosition(c, z, t);
 	}

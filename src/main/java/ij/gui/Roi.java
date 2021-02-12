@@ -1,5 +1,6 @@
 package ij.gui;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.measure.*;
 import ij.plugin.*;
@@ -1702,7 +1703,8 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		imp.draw(clipX, clipY, clipWidth, clipHeight);
 	}
 
-	void updatePaste() {
+	@AstroImageJ(reason = "Widen access", modified = true)
+	public void updatePaste() {
 		if (clipboard!=null) {
 			imp.getMask();
 			ImageProcessor ip = imp.getProcessor();

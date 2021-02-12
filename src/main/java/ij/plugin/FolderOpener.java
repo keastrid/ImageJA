@@ -5,6 +5,7 @@ import java.awt.event.*;
 import java.awt.image.ColorModel;
 import java.util.*;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.io.*;
 import ij.gui.*;
 import ij.process.*;
@@ -502,7 +503,8 @@ public class FolderOpener implements PlugIn {
 				stack.addImage(fi);
 		}
 	}
-	
+
+	@AstroImageJ(reason = "Save preference option to open as virtual stack", modified = true)
 	boolean showDialog() {
 		String options = Macro.getOptions();
 		if  (options!=null) {  //macro
@@ -540,7 +542,7 @@ public class FolderOpener implements PlugIn {
 		gd.addNumericField("Step:", this.step, 0, 6, "");
 		gd.addNumericField("Scale:", this.scale, 0, 6, "%");
 		gd.addCheckbox("Sort names numerically", sortFileNames);
-		gd.addCheckbox("Use virtual stack", openAsVirtualStack);
+		gd.addCheckbox("Use virtual stack", Prefs.get("folderopener.openAsVirtualStack", openAsVirtualStack));
 		gd.addCheckbox("Open as separate images", false);		
 		gd.addHelp(IJ.URL+"/docs/menus/file.html#seq1");
 		gd.showDialog();
@@ -570,6 +572,7 @@ public class FolderOpener implements PlugIn {
 		if (!sortFileNames)
 			sortByMetaData = false;
 		openAsVirtualStack = gd.getNextBoolean();
+		Prefs.set("folderopener.openAsVirtualStack", openAsVirtualStack);
 		if (openAsVirtualStack)
 			scale = 100.0;
 		openAsSeparateImages = gd.getNextBoolean();

@@ -6,6 +6,7 @@ import java.awt.event.*;
 import java.util.*;
 import java.awt.datatransfer.*;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.plugin.filter.Analyzer;
 import ij.io.SaveDialog;
 import ij.measure.*;
@@ -62,11 +63,13 @@ public class TextPanel extends Panel implements AdjustmentListener,
 
 
 	/** Constructs a new TextPanel. */
+	@AstroImageJ(reason = "Add block increment", modified = true)
 	public TextPanel() {
 		tc = new TextCanvas(this);
 		setLayout(new BorderLayout());
 		add("Center",tc);
 		sbHoriz=new Scrollbar(Scrollbar.HORIZONTAL);
+		sbHoriz.setBlockIncrement(60);
 		GUI.fixScrollbar(sbHoriz);
 		sbHoriz.addAdjustmentListener(this);
 		sbHoriz.setFocusable(false); // prevents scroll bar from blinking on Windows
@@ -547,6 +550,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 			return (TextWindow)comp;
 	}
 
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	void rename(String title2) {
 		ResultsTable rt2 = getOrCreateResultsTable();
 		if (rt2==null)
@@ -558,7 +562,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 			return;
 		if (title2==null) {
 			GenericDialog gd = new GenericDialog("Rename", tw);
-			gd.addStringField("Title:", getNewTitle(title), 20);
+			gd.addStringField("Title:", tw.getTitle().contains("Measure") ? tw.getTitle()+"_2" : "Results2", 40);
 			gd.showDialog();
 			if (gd.wasCanceled())
 				return;
@@ -594,14 +598,15 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 	}
 
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	void duplicate() {
 		ResultsTable rt2 = getOrCreateResultsTable();
 		if (rt2==null)
 			return;
 		rt2 = (ResultsTable)rt2.clone();
-		String title2 = IJ.getString("Title:", getNewTitle(title));
+		String title2 = IJ.getString("Title:", ((TextWindow)(getParent())).getTitle()+"_2");
 		if (!title2.equals("")) {
-			if (title2.equals("Results")) title2 = "Results2";
+			if (title2.equals("Measurements")) title2 = "Measurements in Measurements2";
 			rt2.show(title2);
 		}
 	}
@@ -618,6 +623,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
         return title3;
 	}
 
+	@AstroImageJ(reason = "Add opening of astro windows", modified = true)
 	void select(int x,int y) {
 		Dimension d = tc.getSize();
 		if(iRowHeight==0 || x>d.width || y>d.height)
@@ -640,11 +646,13 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 		tc.repaint();
 		selLine=r;
+		IJ.runPlugIn("UpdateAstroWindows", "");
 		Interpreter interp = Interpreter.getInstance();
 		if (interp!=null && title.equals("Debug"))
 			interp.showArrayInspector(r);
 	}
 
+	@AstroImageJ(reason = "Run macro to update astro windows", modified = true)
 	void extendSelection(int x,int y) {
 		Dimension d = tc.getSize();
 		if(iRowHeight==0 || x>d.width || y>d.height)
@@ -662,6 +670,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 		tc.repaint();
 		selLine=r;
+		IJ.runPlugIn("UpdateAstroWindows", "");
 	}
 
     /** Converts a y coordinate in pixels into a row index. */
@@ -676,6 +685,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 	Copies the current selection to the system clipboard.
 	Returns the number of characters copied.
 	*/
+	@AstroImageJ(reason = "Limit selection to tabs", modified = true)
 	public int copySelection() {
 		if (Recorder.record && title.equals("Results"))
 			Recorder.record("String.copyResults");
@@ -685,7 +695,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		if (Prefs.copyColumnHeaders && labels!=null && !labels.equals("") && selStart==0 && selEnd==iRowCount-1) {
 			if (Prefs.noRowNumbers) {
 				String s = labels;
-				int index = s.indexOf("\t");
+				int index = s.indexOf("\t",s.indexOf("\t")+1);
 				if (index!=-1)
 					s = s.substring(index+1, s.length());
 				sb.append(s);
@@ -699,7 +709,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 			if (s.endsWith("\t"))
 				s = s.substring(0, s.length()-1);
 			if (Prefs.noRowNumbers && labels!=null && !labels.equals("")) {
-				int index = s.indexOf("\t");
+				int index = s.indexOf("\t",s.indexOf("\t")+1);
 				if (index!=-1)
 					s = s.substring(index+1, s.length());
 				sb.append(s);
@@ -887,6 +897,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 	 * display a "save as" dialog. Returns 'false' if the user cancels
 	 * the dialog.
 	*/
+	@AstroImageJ(reason = "Add check for AIJ window", modified = true)
 	public boolean saveAs(String path) {
 		boolean isResults = IJ.isResultsWindow() && IJ.getTextPanel()==this;
 		boolean summarized = false;
@@ -898,7 +909,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		if (rt!=null && rt.size()>0 && !summarized) {
 			if (path==null || path.equals("")) {
 				IJ.wait(10);
-				String name = isResults?"Results":title;
+				String name = isResults?"Results":title.replace("Measurements in ", "");
 				SaveDialog sd = new SaveDialog("Save Table", name, Prefs.defaultResultsExtension());
 				fileName = sd.getFileName();
 				if (fileName==null)

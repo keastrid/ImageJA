@@ -1,4 +1,5 @@
 package ij;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.process.*;
 import ij.io.*;
@@ -84,6 +85,8 @@ public class ImageJ extends Frame implements ActionListener,
 	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
 	/** Address of socket where Image accepts commands */
 	public static final int DEFAULT_PORT = 57294;
+	@AstroImageJ(reason = "Add astroversion")
+    public static final String ASTROVERSION = "5.0.0.0";
 	
 	/** Run as normal application. */
 	public static final int STANDALONE = 0;
@@ -138,8 +141,9 @@ public class ImageJ extends Frame implements ActionListener,
 	/** If 'applet' is not null, creates a new ImageJ frame that runs as an applet.
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
+	@AstroImageJ(reason = "Change title to AstroImageJ", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
-		super("ImageJ");
+		super("AstroImageJ");
 		if ((mode&DEBUG)!=0)
 			IJ.setDebugMode(true);
 		mode = mode & 255;
@@ -228,10 +232,11 @@ public class ImageJ extends Frame implements ActionListener,
 		(new ij.macro.StartupRunner()).run(batchMode); // run RunAtStartup and AutoRun macros
 		IJ.showStatus(version()+ m.getPluginCount() + " commands; " + m.getMacroCount() + str);
  	}
- 	
+
+	@AstroImageJ(reason = "Use astronomy_icon", modified = true)
  	private void loadCursors() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
-		String path = Prefs.getImageJDir()+"images/crosshair-cursor.gif";
+		String path = Prefs.getImageJDir()+"/astronomy_icon.gif";
 		File f = new File(path);
 		if (!f.exists())
 			return;
@@ -274,10 +279,11 @@ public class ImageJ extends Frame implements ActionListener,
 		Image img = createImage((ImageProducer)url.getContent());
 		if (img!=null) setIconImage(img);
 	}
-	
+
+	@AstroImageJ(reason = "make default location 10, 10 instead of -99,-99", modified = true)
 	public Point getPreferredLocation() {
-		int ijX = Prefs.getInt(IJ_X,-99);
-		int ijY = Prefs.getInt(IJ_Y,-99);
+		int ijX = Prefs.getInt(IJ_X,10);
+		int ijY = Prefs.getInt(IJ_Y,10);
 		Rectangle maxBounds = GUI.getMaxWindowBounds();
 		//System.out.println("getPreferredLoc1: "+ijX+" "+ijY+" "+maxBounds);
 		if (ijX>=maxBounds.x && ijY>=maxBounds.y && ijX<(maxBounds.x+maxBounds.width-75)
@@ -399,6 +405,7 @@ public class ImageJ extends Frame implements ActionListener,
 	public void mouseClicked(MouseEvent e) {}
 	public void mouseEntered(MouseEvent e) {}
 
+	@AstroImageJ(reason = "Remove In/Out commands, remove tab key shortcut", modified = true)
  	public void keyPressed(KeyEvent e) {
 		if (e.isConsumed())
 			return;
@@ -478,8 +485,8 @@ public class ImageJ extends Frame implements ActionListener,
 			switch (keyChar) {
 				case '<': case ',': if (isStack) cmd="Previous Slice [<]"; break;
 				case '>': case '.': case ';': if (isStack) cmd="Next Slice [>]"; break;
-				case '+': case '=': cmd="In [+]"; break;
-				case '-': cmd="Out [-]"; break;
+				case '+': case '=': cmd=""; break;
+				case '-': cmd=""; break;
 				case '/': cmd="Reslice [/]..."; break;
 				default:
 			}
@@ -487,7 +494,7 @@ public class ImageJ extends Frame implements ActionListener,
 
 		if (cmd==null) {
 			switch (keyCode) {
-				case KeyEvent.VK_TAB: WindowManager.putBehind(); return;				
+				//case KeyEvent.VK_TAB: WindowManager.putBehind(); return;
 				case KeyEvent.VK_BACK_SPACE: case KeyEvent.VK_DELETE:
 					if (!(shift||control||alt||meta)) {
 						if (deleteOverlayRoi(imp))
@@ -499,8 +506,8 @@ public class ImageJ extends Frame implements ActionListener,
 					}
 					break;
 				//case KeyEvent.VK_BACK_SLASH: cmd=IJ.altKeyDown()?"Animation Options...":"Start Animation"; break;
-				case KeyEvent.VK_EQUALS: cmd="In [+]"; break;
-				case KeyEvent.VK_MINUS: cmd="Out [-]"; break;
+				case KeyEvent.VK_EQUALS: cmd=""; break;
+				case KeyEvent.VK_MINUS: cmd=""; break;
 				case KeyEvent.VK_SLASH: case 0xbf: cmd="Reslice [/]..."; break;
 				case KeyEvent.VK_COMMA: case 0xbc: if (isStack) cmd="Previous Slice [<]"; break;
 				case KeyEvent.VK_PERIOD: case 0xbe: if (isStack) cmd="Next Slice [>]"; break;
@@ -522,9 +529,9 @@ public class ImageJ extends Frame implements ActionListener,
 					else if (stackKey && keyCode==KeyEvent.VK_LEFT)
 							cmd="Previous Slice [<]";
 					else if (zoomKey && keyCode==KeyEvent.VK_DOWN && !ignoreArrowKeys(imp) && Toolbar.getToolId()<Toolbar.SPARE6)
-							cmd="Out [-]";
+							cmd="";
 					else if (zoomKey && keyCode==KeyEvent.VK_UP && !ignoreArrowKeys(imp) && Toolbar.getToolId()<Toolbar.SPARE6)
-							cmd="In [+]";
+							cmd="";
 					else if (roi!=null) {
 						if ((flags & KeyEvent.ALT_MASK)!=0 || (flags & KeyEvent.CTRL_MASK)!=0)
 							roi.nudgeCorner(keyCode);
@@ -792,6 +799,8 @@ public class ImageJ extends Frame implements ActionListener,
 	}
 	
 	/** Quit using a separate thread, hopefully avoiding thread deadlocks. */
+	@AstroImageJ(reason = "Add event calls for closing when DP, AstroConvert, multiplot, or astro stack windows are " +
+			"open", modified = true)
 	public void run() {
 		quitting = true;
 		boolean changes = false;
@@ -832,6 +841,17 @@ public class ImageJ extends Frame implements ActionListener,
 		if (applet==null) {
 			saveWindowLocations();
 			Prefs.set(ImageWindow.LOC_KEY,null); // don't save image window location
+			Frame[] dp = Frame.getFrames();
+			for (int i=0; i<dp.length;i++) {
+				if (dp[i].getTitle().equals("CCD Data Processor") ||
+						dp[i].getTitle().equals("Multi-plot Main") ||
+						dp[i].getTitle().equals("Coordinate Converter") ||
+						dp[i].getClass().getName().contains("AstroStackWindow")) {
+					WindowEvent wev = new WindowEvent(dp[i], WindowEvent.WINDOW_CLOSING);
+					Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+					IJ.wait(100);
+				}
+			}
 			Prefs.savePreferences();
 		}
 		IJ.cleanup();

@@ -1,4 +1,5 @@
 package ij;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.util.*;
 import ij.gui.ImageWindow;
@@ -92,6 +93,7 @@ public class Menus {
 		instance = this;
 	}
 
+	@AstroImageJ(reason = "Disable IJ zoom in favor of AIJ zoom, rename IJ to AIJ", modified = true)
 	String addMenuBar() {
 		scale = Prefs.getGuiScale();
 		if ((scale>=1.5&&scale<2.0) || (scale>=2.5&&scale<3.0))
@@ -181,7 +183,7 @@ public class Menus {
 		addPlugInItem(image, "Rename...", "ij.plugin.SimpleCommands(\"rename\")", 0, false);
 		addPlugInItem(image, "Scale...", "ij.plugin.Scaler", KeyEvent.VK_E, false);
 		getMenu("Image>Transform", true);
-		getMenu("Image>Zoom", true);
+		//getMenu("Image>Zoom", true);
 		getMenu("Image>Overlay", true);
 		image.addSeparator();
 		getMenu("Image>Lookup Tables", true);
@@ -252,11 +254,12 @@ public class Menus {
 		addPlugInItem(examplesMenu, "Open as Panel", "ij.plugin.SimpleCommands(\"opencp\")", 0, false);
 		help.add(examplesMenu);
 		help.addSeparator();
-		addPlugInItem(help, "Update ImageJ...", "ij.plugin.ImageJ_Updater", 0, false);
+		addPlugInItem(help, "Update AstroImageJ...", "Astronomy.AstroImageJ_Updater", 0, false);
 		addPlugInItem(help, "Refresh Menus", "ij.plugin.ImageJ_Updater(\"menus\")", 0, false);
 		help.addSeparator();
 		Menu aboutMenu = getMenu("Help>About Plugins", true);
-		addPlugInItem(help, "About ImageJ...", "ij.plugin.AboutBox", 0, false);
+		//addPlugInItem(help, "About ImageJ...", "ij.plugin.AboutBox", 0, false);
+		addPlugInItem(help, "About AstroImageJ...", "ij.plugin.AboutBox", 0, false);
 				
 		if (applet==null) {
 			menuSeparators = new Properties();

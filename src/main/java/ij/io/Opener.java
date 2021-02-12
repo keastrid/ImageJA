@@ -1,5 +1,6 @@
 package ij.io;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.process.*;
 import ij.plugin.frame.*;
@@ -141,8 +142,8 @@ public class Opener {
 				case OJJ:  // ObjectJ project
 					IJ.runPlugIn("ObjectJ_", path);
 					break;
-				case TABLE: 
-					openTable(path);
+				case TABLE:
+					IJ.runPlugIn("Astronomy.Read_MeasurementTable",path);
 					break;
 				case RAW:
 					IJ.runPlugIn("ij.plugin.Raw", path);
@@ -936,6 +937,7 @@ public class Opener {
 
 	/** Opens a single TIFF or DICOM contained in a ZIP archive,
 		or a ZIPed collection of ".roi" files created by the ROI manager. */	
+	@AstroImageJ(reason = "add support for more file types; open tables in AIJ measurements table", modified = true)
 	public ImagePlus openZip(String path) {
 		ImagePlus imp = null;
 		try {
@@ -961,9 +963,12 @@ public class Opener {
 				DICOM dcm = new DICOM(zis);
 				dcm.run(name);
 				imp = dcm;
+			} else if (name.endsWith(".fts") || name.endsWith(".fits") || name.endsWith(".fit") || name.endsWith("fts.fz") || name.endsWith(".fits.fz") || name.endsWith(".fit.fz")) {
+				imp = (ImagePlus)IJ.runPlugIn("ij.plugin.FITS_Reader", path+'\\'+name.replace('/', '\\'));
+				if (imp.getWidth()!=0) return imp; else return null;
 			} else {
 				zis.close();
-				String msg = "This ZIP archive does not contain a TIFF or DICOM file, or ROIs:\n   "+path;
+				String msg = "This ZIP archive does not appear to contain a \nTIFF (\".tif\") or DICOM (\".dcm\") or FITS file, or ROIs (\".roi\").\n\t"+path;
 				if (silentMode)
 					IJ.log(msg);
 				else
@@ -1178,6 +1183,7 @@ public class Opener {
 	Attempts to determine the image file type by looking for
 	'magic numbers' and the file name extension.
 	 */
+	@AstroImageJ(reason = "Add more filte types", modified = true)
 	public int getFileType(String path) {
 		if (openUsingPlugins && !path.endsWith(".txt") &&  !path.endsWith(".java"))
 			return UNKNOWN;
@@ -1247,7 +1253,8 @@ public class Opener {
 			return ZIP;
 
 		// FITS ("SIMP")
-		if ((b0==83 && b1==73 && b2==77 && b3==80) || name.endsWith(".fts.gz") || name.endsWith(".fits.gz"))
+		if ((b0==83 && b1==73 && b2==77 && b3==80) || name.endsWith(".fts.gz") || name.endsWith(".fits.gz") ||
+				name.endsWith(".fit.gz") || name.endsWith(".fts.fz") || name.endsWith(".fits.fz") || name.endsWith(".fit.fz"))
 			return FITS;
 			
 		// Java source file, text file or macro
@@ -1264,7 +1271,8 @@ public class Opener {
 			return OJJ;
 
 		// Results table (tab-delimited or comma-separated tabular text)
-		if (name.endsWith(".xls") || name.endsWith(".csv") || name.endsWith(".tsv")) 
+		if (name.endsWith(".xls") || name.endsWith(".csv") || name.endsWith(".dat") || name.endsWith(".tbl") ||
+				name.endsWith(".prn") || name.endsWith(".spc"))
 			return TABLE;
 
 		// AVI

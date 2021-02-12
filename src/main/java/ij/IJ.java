@@ -1,4 +1,5 @@
 package ij;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.process.*;
 import ij.text.*;
@@ -80,29 +81,22 @@ public class IJ {
 	private static Interpreter macroInterpreter;
 	private static boolean protectStatusBar;
 	private static Thread statusBarThread;
-			
+
 	static {
 		osname = System.getProperty("os.name");
 		isWin = osname.startsWith("Windows");
 		isMac = !isWin && osname.startsWith("Mac");
 		isLinux = osname.startsWith("Linux");
-		String version = System.getProperty("java.version");
-		if (version==null || version.length()<2)
-			version = "1.8";
-		if (version.startsWith("1.8"))
-			javaVersion = 8;
-		else if (version.charAt(0)=='1' && Character.isDigit(version.charAt(1)))
-			javaVersion = 10 + (version.charAt(1) - '0');
-		else if (version.charAt(0)=='2' && Character.isDigit(version.charAt(1)))
-			javaVersion = 20 + (version.charAt(1) - '0');
-		else if (version.startsWith("1.6"))
-			javaVersion = 6;
-		else if (version.startsWith("1.9")||version.startsWith("9"))
-			javaVersion = 9;
-		else if (version.startsWith("1.7"))
-			javaVersion = 7;
-		else
-			javaVersion = 8;
+		@AstroImageJ(reason = "Future proof java version check and make it sane; set sane fallback mode", modified = true)
+		String version = System.getProperty("java.specification.version"); // JRE version not needed as version checking is for feature compliance (can also simplify the following regex if this is used)
+		// Safety check to ensure passed version is not null and is a version string (based off safety checks made in original)
+		if (version == null || !version.matches("(^[0-9]+([\\._][0-9]+)+$)|(^[0-9]+$)")) {
+			javaVersion = 6; // If version does not match number or number./_number./_number..., set compliance level to 6 as no version was found
+		} else {
+			String[] parsed = version.split("\\.");
+			javaVersion = Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0]);
+		}
+
 		dfs = new DecimalFormatSymbols(Locale.US);
 		df = new DecimalFormat[10];
 		df[0] = new DecimalFormat("0", dfs);
@@ -1741,6 +1735,12 @@ public class IJ {
 	/** Returns the ImageJ version number as a string. */
 	public static String getVersion() {
 		return ImageJ.VERSION;
+	}
+
+	/** Returns the AstroImageJ version number as a string. */
+	@AstroImageJ(reason = "Method to return AIJ version")
+	public static String getAstroVersion() {
+		return ImageJ.ASTROVERSION;
 	}
 	
 	/** Returns the ImageJ version and build number as a String, for 

@@ -3,6 +3,8 @@ import java.awt.*;
 import java.awt.image.*;
 import java.net.URL;
 import java.util.*;
+
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.io.*;
 import ij.gui.*;
@@ -666,12 +668,13 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 		setProcessor2(title, ip, null);
 	}
 
+	@AstroImageJ(reason = "Remove ip null check, add check for PlotWindow", modified = true)
 	void setProcessor2(String title, ImageProcessor ip, ImageStack newStack) {
 		if (title!=null) setTitle(title);
 		if (ip==null)
 			return;
 		this.ip = ip;
-		if (this.ip!=null && getWindow()!=null)
+		if (getWindow()!=null && !(getWindow() instanceof PlotWindow))
 			notifyListeners(UPDATED);
 		if (ij!=null)
 			ip.setProgressBar(ij.getProgressBar());
@@ -1855,7 +1858,9 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	 * @see #setZ
 	 * @see #setT
 	 */
+	@AstroImageJ(reason = "Add reset if color type is RGB", modified = true)
 	public synchronized void setSlice(int n) {
+		if (getType()==ImagePlus.COLOR_RGB) ip.reset();
 		if (stack==null || (n==currentSlice&&ip!=null)) {
 			if (!noUpdateMode)
 				updateAndRepaintWindow();

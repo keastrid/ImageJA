@@ -6,6 +6,7 @@ import java.io.*;
 import java.awt.datatransfer.*;
 import java.util.*;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.util.*;
 import ij.text.TextWindow;
@@ -340,11 +341,12 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			SET_RANGE, PREV_RANGE, RESET_RANGE, FIT_RANGE, ZOOM_SELECTION, AXIS_OPTIONS, LEGEND, STYLE, RESET_PLOT};
 
 	/** Prepares and returns the popupMenu of the Data>> button */
+	@AstroImageJ(reason = "Convert COPY item to saving of aperture in case of seeing profile window", modified = true)
 	PopupMenu getDataPopupMenu() {
 		dataPopupMenu = new PopupMenu();
 		GUI.scalePopupMenu(dataPopupMenu);
 		menuItems[SAVE] = addPopupItem(dataPopupMenu, "Save Data...");
-		menuItems[COPY] = addPopupItem(dataPopupMenu, "Copy 1st Data Set");
+		menuItems[COPY] = addPopupItem(dataPopupMenu, getTitle().startsWith("Seeing Profile")?"Save Aperture":"Copy...");
 		menuItems[COPY_ALL] = addPopupItem(dataPopupMenu, "Copy All Data");
 		menuItems[LIST_SIMPLE] = addPopupItem(dataPopupMenu, "List (Simple Headings)");
 		dataPopupMenu.addSeparator();
@@ -394,6 +396,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	}
 
 	/** Called if user has activated a button or popup menu item */
+	@AstroImageJ(reason = "Handle saving of various AIJ data", modified = true)
 	public void actionPerformed(ActionEvent e) {
 		try {
 		Object b = e.getSource();
@@ -407,8 +410,17 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		} else if (b==more) {
 			enableDisableMenuItems();
 			morePopupMenu.show((Component)b, 1, 1);
-		} else if (b==menuItems[SAVE])
-			saveAsText();
+		} else if (b==menuItems[SAVE]) {
+			String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
+			SaveDialog sf = new SaveDialog("Save plot as PNG",fileName, ".png");
+			if (sf.getDirectory() == null || sf.getFileName() == null) return;
+			IJ.runPlugIn(imp, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
+		} else if (getTitle().startsWith("Seeing Profile")) {
+			Prefs.set("aperture.radius",Prefs.get("seeingprofile.radius", 20));
+			Prefs.set("aperture.rback1",Prefs.get("seeingprofile.rback1", 30));
+			Prefs.set("aperture.rback2",Prefs.get("seeingprofile.rback2", 40));
+			Prefs.set("setaperture.aperturechanged",true);
+		}
 		else if (b==menuItems[COPY])
 			copyToClipboard(false);
 		else if (b==menuItems[COPY_ALL])
