@@ -24,7 +24,8 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 
 	private static final int WIDTH = 600;
 	private static final int HEIGHT = 340;
-	private static final int FONT_SIZE = 14;
+	@AstroImageJ(reason = "Revert font size to 12 from 14", modified = true)
+	private static final int FONT_SIZE = 12;
 	private static final String PREFS_WIDTH = "pp.width";
 	private static final String PREFS_HEIGHT = "pp.height";
 	private static final String PREFS_FONT_SIZE = "pp.fontsize";
@@ -72,7 +73,8 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	private static final int NO_GRID_LINES = 16;
 	private static final int NO_TICKS = 32;
 	private static String moreButtonLabel = "More "+'\u00bb';
-	private static String dataButtonLabel = "Data "+'\u00bb';
+	@AstroImageJ(reason = "Convert data button to save button", modified = true)
+	private static String dataButtonLabel = "Save";
 
 	boolean wasActivated;			// true after window has been activated once, needed by PlotCanvas
 
@@ -222,6 +224,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	}
 
 	/** Displays the plot. */
+	@AstroImageJ(reason = "Disable 'More' plot option by setting it invisible")
 	public void draw() {
 		Panel bottomPanel = new Panel();
 		int hgap = IJ.isMacOSX()?1:5;
@@ -234,6 +237,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		data.addActionListener(this);
 		bottomPanel.add(data);
 		more = new Button(moreButtonLabel);
+		more.setVisible(false);
 		more.addActionListener(this);
 		bottomPanel.add(more);
 		if (plot!=null && plot.getPlotMaker()!=null) {
@@ -267,6 +271,14 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			showList(/*useLabels=*/false);
 		else
 			ic.requestFocus();	//have focus on the canvas, not the button, so that pressing the space bar allows panning
+	}
+
+	@Override
+	@AstroImageJ(reason = "Correction for plot window bounds to go to top of window.")
+	public Insets getInsets() {
+		Insets b = super.getInsets();
+		b.set(b.top-4, b.left, b.bottom, b.right);
+		return b;
 	}
 
 	/** Sets the Plot object shown in this PlotWindow. Does not update the window. */
@@ -405,8 +417,12 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		else if (b==list)
 			showList(/*useLabels=*/true);
 		else if (b==data) {
-			enableDisableMenuItems();
-			dataPopupMenu.show((Component)b, 1, 1);
+			//enableDisableMenuItems();
+			//dataPopupMenu.show((Component)b, 1, 1);
+			String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
+			SaveDialog sf = new SaveDialog("Save plot as PNG",fileName, ".png");
+			if (sf.getDirectory() == null || sf.getFileName() == null) return;
+			IJ.runPlugIn(imp, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
 		} else if (b==more) {
 			enableDisableMenuItems();
 			morePopupMenu.show((Component)b, 1, 1);

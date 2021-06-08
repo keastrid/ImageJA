@@ -2,7 +2,6 @@ package ij.astro;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
 /**
  * Annotation marking code within ImageJ as originating or having been modified for the purposes of

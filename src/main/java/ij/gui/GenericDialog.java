@@ -788,6 +788,16 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		addSlider( label, minValue, maxValue, defaultValue, scale, digits);
 	}
 
+	@AstroImageJ(reason = "float slider, primarily for aperture radius")
+	public void addFloatSlider(String label, double minValue, double maxValue, double defaultValue, int digits, double stepSize) {
+		if ( stepSize <= 0 ) stepSize  = 1;
+		double scale = 1.0 / Math.abs( stepSize );
+		minValue *= scale;
+		maxValue *= scale;
+		defaultValue *= scale;
+		addSlider(label, minValue, maxValue, defaultValue, scale, digits);
+	}
+
 	/** This vesion of addSlider() adds a 'stepSize' argument.<br>
 	 * Example: http://wsr.imagej.net/macros/SliderDemo.txt
 	*/

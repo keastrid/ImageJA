@@ -1513,7 +1513,7 @@ public class IJ {
 
 	/** Activates the window with the specified title. */
 	public static void selectWindow(String title) {
-		if (title.equals("ImageJ")&&ij!=null) {
+		if (title.equals("AstroImageJ")&&ij!=null) {
 			ij.toFront();
 			return;
 		}

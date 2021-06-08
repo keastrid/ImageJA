@@ -86,7 +86,7 @@ public class ImageJ extends Frame implements ActionListener,
 	/** Address of socket where Image accepts commands */
 	public static final int DEFAULT_PORT = 57294;
 	@AstroImageJ(reason = "Add astroversion")
-    public static final String ASTROVERSION = "5.0.0.0";
+    public static final String ASTROVERSION = getAijVersion();
 	
 	/** Run as normal application. */
 	public static final int STANDALONE = 0;
@@ -141,7 +141,8 @@ public class ImageJ extends Frame implements ActionListener,
 	/** If 'applet' is not null, creates a new ImageJ frame that runs as an applet.
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
-	@AstroImageJ(reason = "Change title to AstroImageJ", modified = true)
+	@AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true; " +
+			"Make MacAdapter look in plugins folder", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
 		if ((mode&DEBUG)!=0)
@@ -203,8 +204,8 @@ public class ImageJ extends Frame implements ActionListener,
 					IJ.wait(10);
 					pack();
 					if (IJ.debugMode) IJ.log("pack()");
-					if (!Prefs.jFileChooserSettingChanged)
-						Prefs.useJFileChooser = true;
+					//if (!Prefs.jFileChooserSettingChanged)
+						//Prefs.useJFileChooser = true;
 				} else if (IJ.isMacOSX()) {
 					Rectangle maxBounds = GUI.getMaxWindowBounds(this);
 					if (loc.x+size.width>maxBounds.x+maxBounds.width)
@@ -220,7 +221,7 @@ public class ImageJ extends Frame implements ActionListener,
 		}
 		if (IJ.isMacintosh()&&applet==null) {
 			try {
-				IJ.runPlugIn("ij.plugin.MacAdapter", ""); 
+				IJ.runPlugIn("MacAdapter", "");
 			} catch(Throwable e) {}
 		} 
 		if (applet==null)
@@ -272,9 +273,10 @@ public class ImageJ extends Frame implements ActionListener,
 		}
 		//new ProxySettings().logProperties();
 	}
-	
+
+	@AstroImageJ(reason = "Use astronomy icon instead of microscope", modified = true)
     void setIcon() throws Exception {
-		URL url = this.getClass().getResource("/microscope.gif");
+		URL url = this.getClass().getClassLoader().getResource("astronomy_icon.png");
 		if (url==null) return;
 		Image img = createImage((ImageProducer)url.getContent());
 		if (img!=null) setIconImage(img);
@@ -396,8 +398,10 @@ public class ImageJ extends Frame implements ActionListener,
 		return version()+System.getProperty("os.name")+" "+System.getProperty("os.version")+"; "+IJ.freeMemory();
 	}
 
+	@AstroImageJ(modified = true, reason = "Add AIj version to display")
 	private String version() {
-		return "ImageJ "+VERSION+BUILD + "; "+"Java "+System.getProperty("java.version")+(IJ.is64Bit()?" [64-bit]; ":" [32-bit]; ");
+		return "AIJ " + ASTROVERSION + "; " + "ImageJ "+VERSION+BUILD + "; "+"Java "+System.getProperty("java.version")+
+				(IJ.is64Bit()?" [64-bit]; ":" [32-bit]; ");
 	}
 	
 	public void mouseReleased(MouseEvent e) {}
@@ -900,6 +904,19 @@ public class ImageJ extends Frame implements ActionListener,
 		statusLine.setFont(new Font("SansSerif", Font.PLAIN, (int)(13*scale)));
 		progressBar.init((int)(ProgressBar.WIDTH*scale), (int)(ProgressBar.HEIGHT*scale));
 		pack();
+	}
+
+	@AstroImageJ(reason = "Read AIJ version from a resource, particularly for debuging dev versions.")
+	private static String getAijVersion() {
+		try {
+			String v = new Scanner(Objects.requireNonNull(ImageJ.class.getClassLoader()
+					.getResource("aij_version.txt")).openStream()).nextLine();
+			// If not running as AIJ dev, only show major part of the version
+			return System.getProperty("aij.dev") == null ? v.split("\\+")[0] : v;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "5-local";
+		}
 	}
 
 }

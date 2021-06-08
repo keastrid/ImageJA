@@ -139,11 +139,12 @@ public class Plot implements Cloneable {
 	public static final int RIGHT_MARGIN = 18;
 	/** The default margin width above the plot frame
 	 *	@deprecated Not a fixed value any more, use getDrawingFrame() to get the drawing area */
-	@AstroImageJ(reason = "Increase default from 15 to 50", modified = true)
-	public static final int TOP_MARGIN = 50;
+	@AstroImageJ(reason = "Increase default from 15 to 47", modified = true)
+	public static final int TOP_MARGIN = 47;
 	/** The default margin width below the plot frame
 	 *	@deprecated Not a fixed value any more, use getDrawingFrame() to get the drawing area */
-	public static final int BOTTOM_MARGIN = 40;
+	@AstroImageJ(reason = "Decrease default from 40 to 35", modified = true)
+	public static final int BOTTOM_MARGIN = 35;
 	/** minimum width of frame area in plot */
 	public static final int MIN_FRAMEWIDTH = 160;
 	/** minimum width of frame area in plot */
@@ -914,17 +915,6 @@ public class Plot implements Cloneable {
 	 *  the lower right corner. Uses the justification specified by setJustification().
 	 *  When called with the same position as the previous addLabel call, the text of that previous call is replaced */
 	public void addLabel(double x, double y, String label) {
-		if (textLoc!=null && x==textLoc.getX() && y==textLoc.getY())
-			allPlotObjects.set(textIndex, new PlotObject(label, x, y, currentJustification, currentFont, currentColor, PlotObject.NORMALIZED_LABEL));
-		else {
-			allPlotObjects.add(new PlotObject(label, x, y, currentJustification, currentFont, currentColor, PlotObject.NORMALIZED_LABEL));
-			textLoc = new Point2D.Double(x,y);
-			textIndex = allPlotObjects.size()-1;
-		}
-	}
-
-	@AstroImageJ(reason = "unknown; unused")
-	public void addTitle(double x, double y, String label) {
 		if (textLoc!=null && x==textLoc.getX() && y==textLoc.getY())
 			allPlotObjects.set(textIndex, new PlotObject(label, x, y, currentJustification, currentFont, currentColor, PlotObject.NORMALIZED_LABEL));
 		else {
@@ -2444,6 +2434,7 @@ public class Plot implements Cloneable {
 
 	/** Draws ticks, grid and axis label for each tick/grid line.
 	 *	The grid or major tick spacing in each direction is given by steps */
+	@AstroImageJ(reason = "Set font size to 12 for axis labels", modified = true)
 	void drawAxesTicksGridNumbers(double[] steps) {
 
 		if (ip==null)
@@ -2455,6 +2446,7 @@ public class Plot implements Cloneable {
 		Font scFontMedium = scFont.deriveFont(scFont.getSize2D()*10f/12f); //for axis numbers if full size does not fit
 		Font scFontSmall = scFont.deriveFont(scFont.getSize2D()*9f/12f);   //for subscripts
 		ip.setFont(scFont);
+		ip.setFontSize(12);
 		FontMetrics fm = ip.getFontMetrics();
 		int fontAscent = fm.getAscent();
 		ip.setJustification(LEFT);
@@ -2565,6 +2557,7 @@ public class Plot implements Cloneable {
 		}
 		// ---	A l o n g	Y	A x i s
 		ip.setFont(scFont);
+		ip.setFontSize(12);
 		int maxNumWidth = 0;
 		int xNumberRight = leftMargin-sc(2)-ip.getStringWidth("0")/2;
 		Rectangle rect = ip.getStringBounds("0169");
@@ -2724,6 +2717,7 @@ public class Plot implements Cloneable {
 		// --- Write x and y axis text labels
 		if (xCats == null) {
 			ip.setFont(pp.xLabel.getFont() == null ? scFont : scFont(pp.xLabel.getFont()));
+			ip.setFontSize(12);
 			ImageProcessor xLabel = stringToPixels(xLabelToDraw);
 			if(xLabel != null){
 				int xpos = leftMargin+(frame.width-xLabel.getWidth())/2;
@@ -2734,6 +2728,7 @@ public class Plot implements Cloneable {
 		if (yCats == null) {
 			ip.setFont(pp.yLabel.getFont() == null ? scFont : scFont(pp.yLabel.getFont()));
 			ImageProcessor yLabel = stringToPixels(yLabelToDraw);
+			ip.setFontSize(12);
 			if(yLabel != null){
 				yLabel = yLabel.rotateLeft();
 				int xRightOfYLabel = xNumberRight - maxNumWidth - sc(2);
