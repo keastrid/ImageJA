@@ -275,6 +275,17 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		tc.repaint();
  	}
 
+	private void showLinePos() { // show line numbers in status bar (Norbert Visher)
+		int startLine = getSelectionStart() +1;
+		int endLine = getSelectionEnd() + 1;
+		String msg = "Line " + startLine;
+		if (startLine != endLine) {
+			msg += "-" + endLine;
+		}
+		if (!msg.equals("Line 0"))
+			IJ.showStatus(msg);
+	}
+	
 	public void mousePressed (MouseEvent e) {
 		int x=e.getX(), y=e.getY();
 		if (e.isPopupTrigger() || e.isMetaDown())
@@ -407,7 +418,9 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 	}
 
- 	public void mouseReleased (MouseEvent e) {}
+ 	public void mouseReleased (MouseEvent e) {
+			showLinePos();
+	}
 	public void mouseClicked (MouseEvent e) {}
 	public void mouseEntered (MouseEvent e) {}
 
@@ -452,6 +465,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 
 	public void keyReleased (KeyEvent e) {
 		IJ.setKeyUp(e.getKeyCode());
+		showLinePos();
 	}
 
 	public void keyTyped (KeyEvent e) {
